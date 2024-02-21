@@ -17,7 +17,7 @@ curl --request POST \
 
 示例截图:
 
-![alt text](image.png)
+![query sample](https://raw.githubusercontent.com/wujun4code/weather-graphql/main/image.png)
 
 ## 本地启动
 
