@@ -4,4 +4,9 @@ export const resolvers = {
             return dataSources.location.searchLocations(args.location);
         },
     },
+    Location: {
+        now(parent, args, { dataSources }, info) {
+            return dataSources.now.getNow(parent.id);
+        }
+    }
 };

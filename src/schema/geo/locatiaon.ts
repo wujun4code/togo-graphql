@@ -14,6 +14,8 @@ export const typeDefs = `#graphql
     type: String!
     rank: String!
     fxLink: String!
+
+    now: Now!
   }
 
   type Query {
