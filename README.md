@@ -26,7 +26,7 @@ git clone 之后，重命名 .env.sample -> .env
 确保你本地的 node 至少是 18 以上，其他版本没有验证（懒~~）。
 
 ```shell
-node  -v
+node -v
 v18.19.1
 ```
 

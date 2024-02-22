@@ -18,6 +18,8 @@ export const typeDefs = `#graphql
     now: Now!
 
     hourly(hourly: HourlyForecastType! = Hourly24H, limit: Int = 4): [HourlyForecast!]!
+
+    daily(daily: DailyForecastType! = Daily3D, limit: Int = 3): [DailyForecast!]!
   }
 
   type Query {
