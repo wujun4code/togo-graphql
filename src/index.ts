@@ -1,6 +1,6 @@
 import { ApolloServer } from '@apollo/server';
 import { startStandaloneServer } from '@apollo/server/standalone';
-import { LocationDataSource, NowDataSource } from './datasources/index.js';
+import { LocationDataSource, WeatherDataSource } from './datasources/index.js';
 import { resolvers } from './resolvers/index.js';
 import { typeDefs } from './schema/index.js';
 
@@ -9,7 +9,7 @@ import 'dotenv/config'
 export interface ContextValue {
     dataSources: {
         location: LocationDataSource;
-        now: NowDataSource
+        weather: WeatherDataSource
     };
 }
 
@@ -25,7 +25,7 @@ const { url } = await startStandaloneServer(server, {
         return {
             dataSources: {
                 location: new LocationDataSource({ cache }),
-                now: new NowDataSource({ cache }),
+                weather: new WeatherDataSource({ cache }),
             },
         };
     },
