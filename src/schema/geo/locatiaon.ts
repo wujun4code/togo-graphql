@@ -15,15 +15,15 @@ export const typeDefs = `#graphql
     rank: String!
     fxLink: String!
 
-    now: Now!
+    now(lang: String! = "zh-hans"): Now!
 
-    hourly(hourly: HourlyForecastType! = Hourly24H, limit: Int = 4): [HourlyForecast!]!
+    hourly(hourly: HourlyForecastType! = Hourly24H, lang: String! = "zh-hans", limit: Int = 4): [HourlyForecast!]!
 
-    daily(daily: DailyForecastType! = Daily3D, limit: Int = 3): [DailyForecast!]!
+    daily(daily: DailyForecastType! = Daily3D, lang: String! = "zh-hans", limit: Int = 3): [DailyForecast!]!
   }
 
   type Query {
-    searchLocations(location: String!): [Location!]!
-    getLocation(locationId: String!): [Location!]!
+    searchLocations(location: String!, lang: String! = "zh-hans"): [Location!]!
+    getLocation(locationId: String!, lang: String! = "zh-hans"): [Location!]!
   }
-`;
+`

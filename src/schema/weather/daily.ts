@@ -51,6 +51,6 @@ enum DailyForecastType {
 # }
 
 type Query {
-    getDailyByLocationId(locationId: String!, daily: DailyForecastType! = Daily3D, limit: Int = 3): [DailyForecast!]!
+    getDailyByLocationId(locationId: String!, daily: DailyForecastType! = Daily3D, lang: String! = "zh-hans", limit: Int = 3): [DailyForecast!]!
 }
 `;

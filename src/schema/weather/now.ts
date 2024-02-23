@@ -31,6 +31,6 @@ type Now {
 #   }
   
   type Query {
-    getNowByLocationId(locationId: String!): Now!
+    getNowByLocationId(locationId: String!, lang: String! = "zh-hans"): Now!
   }
 `;

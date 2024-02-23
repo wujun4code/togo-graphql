@@ -30,6 +30,6 @@ enum HourlyForecastType {
 # }
 
 type Query {
-    getHourlyByLocationId(locationId: String!, hourly: HourlyForecastType! = Hourly24H, limit: Int = 4): [HourlyForecast!]!
+    getHourlyByLocationId(locationId: String!, hourly: HourlyForecastType! = Hourly24H, lang: String! = "zh-hans", limit: Int = 4): [HourlyForecast!]!
 }
 `;
