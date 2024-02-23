@@ -19,7 +19,7 @@ export const typeDefs = `#graphql
 
     hourly(hourly: HourlyForecastType! = Hourly24H, lang: String! = "zh-hans", limit: Int = 4): [HourlyForecast!]!
 
-    daily(daily: DailyForecastType! = Daily3D, lang: String! = "zh-hans", limit: Int = 3): [DailyForecast!]! @cacheControl(maxAge: )
+    daily(daily: DailyForecastType! = Daily3D, lang: String! = "zh-hans", limit: Int = 3): [DailyForecast!]!
   }
 
   type Query {
