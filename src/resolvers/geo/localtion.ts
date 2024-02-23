@@ -3,6 +3,9 @@ export const resolvers = {
         searchLocations: async (parent, args, { dataSources }, info) => {
             return dataSources.location.searchLocations(args.location);
         },
+        getLocation: async (parent, args, { dataSources }, info) => {
+            return dataSources.location.getLocation(args.locationId);
+        },
     },
     Location: {
         now(parent, args, { dataSources }, info) {

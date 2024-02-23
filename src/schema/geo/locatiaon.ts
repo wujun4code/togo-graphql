@@ -23,6 +23,7 @@ export const typeDefs = `#graphql
   }
 
   type Query {
-    searchLocations(location: String!): [Location!]
+    searchLocations(location: String!): [Location!]!
+    getLocation(locationId: String!): [Location!]!
   }
 `;

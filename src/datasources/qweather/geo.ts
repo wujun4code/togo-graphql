@@ -12,4 +12,8 @@ export class LocationDataSource extends QWeatherDataSource {
         });
         return data.location;
     }
+
+    getLocation = async (locationId: string) => {
+        return await this.searchLocations(locationId);
+    }
 }
