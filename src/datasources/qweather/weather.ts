@@ -1,7 +1,7 @@
 import { ServerContext } from '../../contracts/index.js';
 import { QWeatherDataSource } from './base.js';
 import { Now, Hourly, Daily } from '../../contracts/index.js';
-import { hasRole, hasPermission, hasFieldPermission, filterFields } from '../../decorators/index.js';
+import { hasRole, hasPermission, hasFieldPermission, filterFields, filterObject } from '../../decorators/index.js';
 
 const windDirAcl = {
     "*": { read: false },
@@ -23,6 +23,7 @@ export class WeatherDataSource extends QWeatherDataSource {
     @hasPermission(['getNow'])
     @hasFieldPermission([{ name: 'windDir', acl: windDirAcl, operation: 'read' }])
     @filterFields([{ name: 'temp', onFilter: (name, value) => { return value > 0; } }])
+    @filterObject([{ onFilter: (item) => { return item.cloud > 0; } }])
     async getNow(context: ServerContext, location: string, lang: string): Promise<Now> {
         const data = await this.get('v7/weather/now', {
             params: {

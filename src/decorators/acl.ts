@@ -40,6 +40,47 @@ export function filterFields(fields: FieldFilterAttribute[]) {
     };
 }
 
+
+export interface ObjectFilterAttribute {
+    onFilter: (item) => boolean;
+}
+
+
+export function cleanObject(result, fields: ObjectFilterAttribute[]) {
+
+    fields.forEach((filter, index, all) => {
+        if (Array.isArray(result)) {
+            const after = result.filter((item, i, r) => {
+                if (filter.onFilter(item))
+                    r.slice(i, 1);
+            });
+            return after;
+        }
+        else {
+            const filtered = filter.onFilter(result);
+            console.log('filtered', `${filtered}`);
+            if (filtered == true)
+                result = {};
+        }
+    });
+
+    return result;
+}
+
+export function filterObject(fields: ObjectFilterAttribute[]) {
+
+    return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+        const original = descriptor.value;
+
+        descriptor.value = async function (...args) {
+            const result = await original.call(this, ...args);
+            const after = cleanObject(result, fields);
+            console.log('after', `${JSON.stringify(after)}`);
+            return after;
+        }
+    };
+}
+
 export class ACL {
     hasACLPermission = (item: { acl }, user: { roles }, operation: 'read' | 'write') => {
         if (!item.acl) return true;
