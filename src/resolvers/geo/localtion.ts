@@ -1,3 +1,5 @@
+import { logger, hasRole } from '../../decorators/index.js';
+
 export const resolvers = {
     Query: {
         searchLocations: async (parent, args, { dataSources }, info) => {
@@ -8,14 +10,14 @@ export const resolvers = {
         },
     },
     Location: {
-        now(parent, args, { dataSources }, info) {
-            return dataSources.weather.getNow(parent.id, args.lang);
+        now(parent, args, context, info) {
+            return context.dataSources.weather.getNow(context, parent.id, args.lang);
         },
         hourly(parent, args, { dataSources }, info) {
-            return dataSources.weather.forcastHourly(parent.id, args.lang, args.hourly, args.limit);
+            return dataSources.weather.forecastHourly(parent.id, args.lang, args.hourly, args.limit);
         },
         daily(parent, args, { dataSources }, info) {
-            return dataSources.weather.forcastDaily(parent.id, args.lang, args.daily, args.limit);
+            return dataSources.weather.forecastDaily(parent.id, args.lang, args.daily, args.limit);
         },
     }
 };

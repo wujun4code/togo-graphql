@@ -1,12 +1,12 @@
 export const typeDefs = `#graphql
 type Now {
     obsTime: String!
-    temp: String!
+    temp: String
     feelsLike: String!
     icon: String!
     text: String!
     wind360: String!
-    windDir: String!
+    windDir: String
     windScale: String!
     windSpeed: String!
     humidity: String!

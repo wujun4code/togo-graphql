@@ -1,4 +1,4 @@
-import { Daily } from '../../contracts/forcast.js';
+import { Daily } from '../../contracts/forecast.js';
 
 export const resolvers = {
     DailyForecastType: {
@@ -10,7 +10,7 @@ export const resolvers = {
     },
     Query: {
         getDailyByLocationId: async (parent, args, { dataSources }, info) => {
-            return dataSources.weather.forcastDaily(args.locationId, args.lang, args.daily, args.limit);
+            return dataSources.weather.forecastDaily(args.locationId, args.lang, args.daily, args.limit);
         },
     },
 };

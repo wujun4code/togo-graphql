@@ -1,3 +1,4 @@
 export * from './location.js';
 export * from './now.js';
-export * from './forcast.js';
+export * from './forecast.js';
+export * from './context.js';

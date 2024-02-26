@@ -1,4 +1,4 @@
-import { Hourly } from '../../contracts/forcast.js';
+import { Hourly } from '../../contracts/forecast.js';
 
 export const resolvers = {
     HourlyForecastType: {
@@ -8,7 +8,7 @@ export const resolvers = {
     },
     Query: {
         getHourlyByLocationId: async (parent, args, { dataSources }, info) => {
-            return dataSources.weather.forcastHourly(args.locationId, args.lang, args.hourly, args.limit);
+            return dataSources.weather.forecastHourly(args.locationId, args.lang, args.hourly, args.limit);
         },
     },
 };

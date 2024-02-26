@@ -1,9 +1,29 @@
+import { ServerContext } from '../../contracts/index.js';
 import { QWeatherDataSource } from './base.js';
 import { Now, Hourly, Daily } from '../../contracts/index.js';
+import { hasRole, hasPermission, hasFieldPermission, filterFields } from '../../decorators/index.js';
+
+const windDirAcl = {
+    "*": { read: false },
+    "role:subscribed": {
+        read: false,
+        write: false
+    },
+    "role:admin": {
+        read: true,
+        write: false
+    },
+};
 
 export class WeatherDataSource extends QWeatherDataSource {
+
     override baseURL = process.env.qweatherHost;
-    async getNow(location: string, lang: string): Promise<Now> {
+
+    @hasRole(['subscribed', 'admin'])
+    @hasPermission(['getNow'])
+    @hasFieldPermission([{ name: 'windDir', acl: windDirAcl, operation: 'read' }])
+    @filterFields([{ name: 'temp', onFilter: (name, value) => { return value > 0; } }])
+    async getNow(context: ServerContext, location: string, lang: string): Promise<Now> {
         const data = await this.get('v7/weather/now', {
             params: {
                 location: location,
@@ -14,7 +34,7 @@ export class WeatherDataSource extends QWeatherDataSource {
         return data.now;
     }
 
-    forcastHourly = async (location: string, lang: string, hourly: Hourly = Hourly.Hourly24H, limit: number) => {
+    forecastHourly = async (location: string, lang: string, hourly: Hourly = Hourly.Hourly24H, limit: number) => {
         const path = `v7/weather/${hourly}`;
         const data = await this.get(path, {
             params: {
@@ -28,7 +48,7 @@ export class WeatherDataSource extends QWeatherDataSource {
         return data.hourly;
     }
 
-    forcastDaily = async (location: string, lang: string, daily: Daily = Daily.Daily7D, limit: number) => {
+    forecastDaily = async (location: string, lang: string, daily: Daily = Daily.Daily7D, limit: number) => {
         const path = `v7/weather/${daily}`;
         const data = await this.get(path, {
             params: {
