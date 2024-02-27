@@ -13,17 +13,21 @@ const windDirAcl = {
         read: true,
         write: false
     },
+    "user:1": {
+        read: true,
+        write: false
+    },
 };
 
 export class WeatherDataSource extends QWeatherDataSource {
 
     override baseURL = process.env.qweatherHost;
 
-    @hasRole(['subscribed', 'admin'])
-    @hasPermission(['getNow'])
+    //@hasRole(['subscribed', 'admin'])
+    //@hasPermission(['getNow'])
     @hasFieldPermission([{ name: 'windDir', acl: windDirAcl, operation: 'read' }])
-    @filterFields([{ name: 'temp', onFilter: (name, value) => { return value > 0; } }])
-    @filterObject([{ onFilter: (item) => { return item.cloud > 0; } }])
+    // @filterFields([{ name: 'temp', onFilter: (name, value) => { return value > 0; } }])
+    // @filterObject([{ onFilter: (item) => { return item.cloud > 0; } }])
     async getNow(context: ServerContext, location: string, lang: string): Promise<Now> {
         const data = await this.get('v7/weather/now', {
             params: {

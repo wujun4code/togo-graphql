@@ -40,7 +40,6 @@ export function filterFields(fields: FieldFilterAttribute[]) {
     };
 }
 
-
 export interface ObjectFilterAttribute {
     onFilter: (item) => boolean;
 }
@@ -82,30 +81,63 @@ export function filterObject(fields: ObjectFilterAttribute[]) {
 }
 
 export class ACL {
-    hasACLPermission = (item: { acl }, user: { roles }, operation: 'read' | 'write') => {
+
+    hasACLPermissionByPrefix = (item: { acl }, user: { id, roles }, keyPrefix: 'role' | 'user', operation: 'read' | 'write') => {
+
         if (!item.acl) return true;
+
         if (item.acl['*'][operation] == true) {
             return true;
         }
-        if (!user.roles) return false;
-        const found = user.roles.some(role => {
-            const roleKey = `role:${role}`;
 
-            if (roleKey in item.acl) {
-                const authorized = item.acl[`role:${role}`][operation];
-                if (authorized == true) return true;
-            }
-        });
-        if (found == true) return found;
+        if (keyPrefix == 'role' && Array.isArray(user.roles) && user.roles.length > 0) {
+            const found = user.roles.some(role => {
+                const roleKey = `role:${role}`;
+
+                if (roleKey in item.acl) {
+                    const authorized = item.acl[`role:${role}`][operation];
+                    if (authorized == true) return true;
+                }
+            });
+            if (found == true) return found;
+        }
+        else if (keyPrefix == 'user') {
+            const authorized = item.acl[`user:${user.id}`][operation];
+            if (authorized == true) return true;
+        }
+
+        // for (const [key, value] of Object.entries(item.acl)) {
+        //     console.log(`${key}: ${value}`);
+        //     if (key.includes(keyPrefix)) {
+        //         const roleName = key.split(':')[1];
+        //         if (value[operation] == true && user.hasRole(roleName)) {
+        //             return true;
+        //         }
+        //     }
+        // }
+
         return false;
-    };
-
-    hasRole = (user: { roles }, roles: string[]) => {
-        return roles.some(item => user.roles.includes(item));
     }
 
-    hasPermission = (user: { permissions }, permissions: string[]) => {
+
+
+    hasACLRole = (item: { acl }, user: { id, roles, }, operation: 'read' | 'write') => {
+        return this.hasACLPermissionByPrefix(item, user, 'role', operation);
+    };
+
+    hasACLPermission = (item: { acl }, user: { id, roles, hasRole, hasPermission }, operation: 'read' | 'write') => {
+        return this.hasACLPermissionByPrefix(item, user, 'user', operation);
+    };
+
+
+    hasRole = (user: { roles, hasRole }, roles: string[]) => {
+        return roles.some(item => user.roles.includes(item));
+        //return roles.some(item => user.hasRole(item));
+    }
+
+    hasPermission = (user: { permissions, hasPermission }, permissions: string[]) => {
         return permissions.some(item => user.permissions.includes(item));
+        //return permissions.some(item => user.hasPermission(item));
     }
 }
 
@@ -147,7 +179,7 @@ export function hasFieldPermission(fieldPermissions: FieldPermission[]) {
                 return {
                     name: f.name,
                     onFilter: (name, value) => {
-                        const authorized = acl.hasACLPermission(f, user, f.operation);
+                        const authorized = acl.hasACLRole(f, user, f.operation);
                         return !authorized;
                     }
                 };
