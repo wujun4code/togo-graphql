@@ -91,7 +91,7 @@ export class KeycloakAccessTokenUser implements UserInterface {
 
 
 export interface SessionContext {
-    //user: UserInterface,
+    user: UserInterface,
 }
 
 export interface ServiceContext {

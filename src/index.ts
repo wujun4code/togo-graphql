@@ -56,14 +56,10 @@ const server = new ApolloServer<ServerContext>({
 
 await server.start();
 
-app.use(keycloak.middleware());
-
 app.use(
     '/',
     cors<cors.CorsRequest>(),
     express.json(),
-    //keycloak.middleware(),
-    keycloak.protect(),
     // expressMiddleware accepts the same arguments:
     // an Apollo Server instance and optional configuration options
     expressMiddleware(server, {
@@ -76,7 +72,10 @@ app.use(
             console.log(`authorization:${token}`);
             console.log(`forwardedToken:${forwardedToken}`);
 
-            const session = {};
+
+            const user = await new UserDataSource().getUserFor(token);
+
+            const session = { user: user };
 
             const acl = new ACL();
 
