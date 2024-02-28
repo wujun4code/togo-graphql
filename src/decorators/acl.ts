@@ -1,4 +1,4 @@
-import { ServiceContext, SessionContext } from '../contracts/index.js';
+import { ServiceContext, SessionContext, ServerContext } from '../contracts/index.js';
 import { GraphQLError } from 'graphql';
 
 export interface FieldFilterAttribute {
@@ -57,7 +57,6 @@ export function cleanObject(result, fields: ObjectFilterAttribute[]) {
         }
         else {
             const filtered = filter.onFilter(result);
-            console.log('filtered', `${filtered}`);
             if (filtered == true)
                 result = {};
         }
@@ -74,8 +73,42 @@ export function filterObject(fields: ObjectFilterAttribute[]) {
         descriptor.value = async function (...args) {
             const result = await original.call(this, ...args);
             const after = cleanObject(result, fields);
-            console.log('after', `${JSON.stringify(after)}`);
             return after;
+        }
+    };
+}
+
+
+interface LimitSizeOnFilterAttribute {
+    onFilter: (context: ServerContext, result: any) => boolean;
+    limit: number;
+}
+
+export function limitSize(limitFilters: LimitSizeOnFilterAttribute[], backwardCompatible: boolean = true) {
+
+    return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+        const original = descriptor.value;
+
+        descriptor.value = async function (...args) {
+
+            const context = args[0] as ServerContext;
+
+            const result = await original.call(this, ...args);
+            if (Array.isArray(result)) {
+                let limitSizes: number[] = [];
+                limitFilters.forEach(filter => {
+                    const filtered = filter.onFilter(context, result);
+                    console.log(`filtered: ${filtered}`);
+                    if (filtered)
+                        limitSizes.push(filter.limit);
+                });
+                let limit = Math.min(...limitSizes);
+                if (!backwardCompatible) limit = Math.max(...limitSizes);
+                const after = result.slice(0, limit);
+                console.log('after', `${JSON.stringify(after)}`);
+                return after;
+            }
+            return result;
         }
     };
 }

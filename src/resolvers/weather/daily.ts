@@ -9,8 +9,8 @@ export const resolvers = {
         Daily30D: Daily.Daily30D,
     },
     Query: {
-        getDailyByLocationId: async (parent, args, { dataSources }, info) => {
-            return dataSources.weather.forecastDaily(args.locationId, args.lang, args.daily, args.limit);
+        getDailyByLocationId: async (parent, args, context, info) => {
+            return context.dataSources.weather.forecastDaily(context, args.locationId, args.lang, args.daily, args.limit);
         },
     },
 };

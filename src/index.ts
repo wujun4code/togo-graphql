@@ -1,7 +1,7 @@
 import { ApolloServer } from '@apollo/server';
 import { startStandaloneServer } from '@apollo/server/standalone';
 import { InMemoryLRUCache } from '@apollo/utils.keyvaluecache';
-import { ServerContext, KeycloakGrantUser, KeycloakAccessTokenUser } from './contracts/index.js';
+import { ServerContext, KeycloakAccessTokenUser } from './contracts/index.js';
 import { LocationDataSource, WeatherDataSource, UserDataSource, IRESTDataSourceConfig } from './datasources/index.js';
 import responseCachePlugin from '@apollo/server-plugin-response-cache';
 import { DataSourceConfig } from '@apollo/datasource-rest';
@@ -16,7 +16,7 @@ import cors from 'cors';
 import express, { Request, Response, NextFunction } from 'express';
 import 'dotenv/config'
 
-const PORT = process.env.port || 4000;
+const PORT = process.env.PORT || 4000;
 
 const app = express();
 
@@ -32,6 +32,10 @@ const server = new ApolloServer<ServerContext>({
 
 await server.start();
 
+function parseJwt(token) {
+    return JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+}
+
 app.use(
     '/',
     cors<cors.CorsRequest>(),
@@ -44,9 +48,9 @@ app.use(
 
             const forwardedToken = req.headers['x-forwarded-access-token'] || '';
 
-            console.log(`headers:${JSON.stringify(req.headers)}`);
+            const keycloakAccessToken = parseJwt(forwardedToken as string);
 
-            const user = await new UserDataSource().getUserFor(forwardedToken);
+            const user = new KeycloakAccessTokenUser(process.env.KEYCLOAK_RESOURCE, keycloakAccessToken);
 
             const session = { user: user };
 

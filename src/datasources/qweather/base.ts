@@ -9,9 +9,9 @@ export class QWeatherDataSource extends RESTDataSource implements IContextDataSo
         super(config.restConfig);
         this.session = config.session;
     }
-    override baseURL = process.env.geoHost || 'https://geoapi.qweather.com/';
+    override baseURL = process.env.GEOHOST || 'https://geoapi.qweather.com/';
 
-    getKey = (): string => process.env.qweatherKey;
+    getKey = (): string => process.env.QWEATHERKEY;
 
     handleErrors = (response) => {
         if (response.code == '403')

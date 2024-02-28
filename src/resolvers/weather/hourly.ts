@@ -7,8 +7,8 @@ export const resolvers = {
         Hourly168H: Hourly.Hourly168H,
     },
     Query: {
-        getHourlyByLocationId: async (parent, args, { dataSources }, info) => {
-            return dataSources.weather.forecastHourly(args.locationId, args.lang, args.hourly, args.limit);
+        getHourlyByLocationId: async (parent, args, context, info) => {
+            return context.dataSources.weather.forecastHourly(context, args.locationId, args.lang, args.hourly, args.limit);
         },
     },
 };

@@ -3,7 +3,7 @@ import { Location } from '../../contracts/index.js';
 
 export class LocationDataSource extends QWeatherDataSource {
 
-    async searchLocations(location: string, lang: string): Promise<Location[]> {
+    async searchLocations(context, location: string, lang: string): Promise<Location[]> {
         const data = await this.get('v2/city/lookup', {
             params: {
                 location: location,
@@ -14,7 +14,7 @@ export class LocationDataSource extends QWeatherDataSource {
         return data.location;
     }
 
-    getLocation = async (locationId: string, lang: string) => {
-        return await this.searchLocations(locationId, lang);
+    async getLocation(context, locationId: string, lang: string) {
+        return await this.searchLocations(context, locationId, lang);
     }
 }

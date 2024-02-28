@@ -6,6 +6,9 @@
 
 https://weather-graphql.shouyicheng.com/
 
+
+注意, 在线 demo 挂了一层 oauth2-proxy 需要你注册一个 keycloak 的账号，才能访问，请放心，这个 keycloak 也是我自己运维的，请随意填写邮箱和用户名，不会泄露您任何隐私，我只是为了防止机器人。
+
 ## 查询示例
 
 ```

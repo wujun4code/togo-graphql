@@ -1,6 +1,5 @@
 import { LocationDataSource, WeatherDataSource, UserDataSource } from '../datasources/index.js';
 import { ACL } from '../decorators/index.js';
-import { Grant } from 'keycloak-connect';
 import { GraphQLError } from 'graphql';
 
 export interface UserInterface {
@@ -10,38 +9,6 @@ export interface UserInterface {
     permissions: string[];
     hasRole: (roleName: string) => boolean;
     hasPermission: (permission: string) => boolean;
-}
-
-export class KeycloakGrantUser implements UserInterface {
-    grant: Grant;
-    id: string;
-    constructor(grant: Grant) {
-        this.grant = grant;
-
-        // const subscribed = grant.access_token.hasApplicationRole(process.env.KEYCLOAK_CLIENT, 'subscribed');
-
-        // const isUser = grant.access_token.hasRealmRole('user');
-
-        // const hasViewProfilePermission = grant.access_token.hasApplicationRole('account', 'view-profile');
-    }
-
-    name: string;
-    roles: [];
-    permissions: [];
-    hasRole = (roleName: string): boolean => {
-        if (this.grant.access_token.isExpired()) {
-            throw new GraphQLError('access token is expired.', {
-                extensions: {
-                    code: 'Unauthorized',
-                },
-            });
-        }
-        return this.grant.access_token.hasApplicationRole(process.env.KEYCLOAK_CLIENT, roleName);
-    }
-
-    hasPermission = (permission: string): boolean => {
-        return this.hasRole(permission);
-    }
 }
 
 export interface KeycloakAccessTokenContent {
