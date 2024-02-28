@@ -13,13 +13,15 @@ import { ApolloServerPluginCacheControl } from '@apollo/server/plugin/cacheContr
 import { ACL } from './decorators/index.js';
 import http from 'http';
 import cors from 'cors';
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import Keycloak from 'keycloak-connect';
 import { Grant } from 'keycloak-connect';
 import { GraphQLError } from 'graphql';
 import session from 'express-session';
-
+import crypto from 'crypto';
 import 'dotenv/config'
+
+const PORT = process.env.port || 4000;
 
 const app = express();
 
@@ -56,18 +58,6 @@ await server.start();
 
 app.use(keycloak.middleware());
 
-
-// API route with Keycloak protection
-app.get('/api', keycloak.protect(), (req: Request, res: Response) => {
-    // Accessing user information from the Keycloak token
-    // @ts-ignore
-    const username = req.kauth.grant.access_token.content.preferred_username;
-    // @ts-ignore
-    const roles = req.kauth.grant.access_token.content.realm_access.roles;
-
-    res.json({ username, roles });
-});
-
 app.use(
     '/',
     cors<cors.CorsRequest>(),
@@ -79,41 +69,14 @@ app.use(
     expressMiddleware(server, {
         context: async ({ req, res }) => {
             const { cache } = server;
+
+            const forwardedToken = req.headers['x-forwarded-access-token'] || '';
             const token = req.headers.authorization || '';
-            // @ts-ignore
-            console.log(`req.kauth`, `${JSON.stringify(req.kauth)}`);
-            // @ts-ignore
-            if (req.kauth.grant == undefined) {
-                throw new GraphQLError(`invalid access token`, {
-                    extensions: {
-                        code: 'Unauthorized',
-                    },
-                });
-            }
-            // @ts-ignore
-            console.log(`access_token.content`, `${JSON.stringify(req.kauth.grant.access_token.content)}`);
 
-            // let grant: Grant = null;
+            console.log(`authorization:${token}`);
+            console.log(`forwardedToken:${forwardedToken}`);
 
-            // try {
-            //     grant = await keycloak.getGrant(req, res);
-            // }
-            // catch (error) {
-            //     console.warn(error);
-            //     throw new GraphQLError(`invalid access token`, {
-            //         extensions: {
-            //             code: 'Unauthorized',
-            //         },
-            //     });
-            // }
-
-            // const keycloakGrantUser = new KeycloakGrantUser(grant);
-
-            // @ts-ignore
-
-            const keycloakAccessTokenUser = new KeycloakAccessTokenUser(keycloakConfig.resource, req.kauth.grant.access_token.content);
-
-            const session = { user: keycloakAccessTokenUser };
+            const session = {};
 
             const acl = new ACL();
 
@@ -134,12 +97,10 @@ app.use(
     }),
 );
 
-const port = process.env.port || 4000;
-
 // Modified server startup
-await new Promise<void>((resolve) => httpServer.listen({ port: port }, resolve));
+await new Promise<void>((resolve) => httpServer.listen({ port: PORT }, resolve));
 
-console.log(`🚀 Server ready at http://localhost:${port}/`);
+console.log(`🚀 Server ready at http://localhost:${PORT}/`);
 
 // const { url } = await startStandaloneServer(server, {
 //     context: async ({ req, res }) => {

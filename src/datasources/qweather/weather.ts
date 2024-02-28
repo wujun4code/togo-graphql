@@ -25,7 +25,7 @@ export class WeatherDataSource extends QWeatherDataSource {
 
     //@hasRole(['subscribed', 'admin'])
     //@hasPermission(['getNow'])
-    @hasFieldPermission([{ name: 'windDir', acl: windDirAcl, operation: 'read' }])
+    //@hasFieldPermission([{ name: 'windDir', acl: windDirAcl, operation: 'read' }])
     // @filterFields([{ name: 'temp', onFilter: (name, value) => { return value > 0; } }])
     // @filterObject([{ onFilter: (item) => { return item.cloud > 0; } }])
     async getNow(context: ServerContext, location: string, lang: string): Promise<Now> {
