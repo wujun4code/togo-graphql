@@ -14,36 +14,12 @@ import { ACL } from './decorators/index.js';
 import http from 'http';
 import cors from 'cors';
 import express, { Request, Response, NextFunction } from 'express';
-import Keycloak from 'keycloak-connect';
-import { Grant } from 'keycloak-connect';
-import { GraphQLError } from 'graphql';
-import session from 'express-session';
-import crypto from 'crypto';
 import 'dotenv/config'
 
 const PORT = process.env.port || 4000;
 
 const app = express();
 
-var memoryStore = new session.MemoryStore()
-
-const keycloakConfig = {
-    "confidential-port": 443,
-    "realm": process.env.KEYCLOAK_REALM,
-    "auth-server-url": `${process.env.KEYCLOAK_URL}`,
-    "ssl-required": "external",
-    "resource": process.env.KEYCLOAK_CLIENT,
-    "bearer-only": true
-}
-
-const keycloak = new Keycloak({ store: memoryStore }, keycloakConfig);
-
-app.use(session({
-    secret: process.env.session_secret,
-    // resave: false,
-    // saveUninitialized: true,
-    store: memoryStore
-}));
 
 const httpServer = http.createServer(app);
 
