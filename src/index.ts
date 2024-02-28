@@ -43,13 +43,10 @@ app.use(
             const { cache } = server;
 
             const forwardedToken = req.headers['x-forwarded-access-token'] || '';
-            const token = req.headers.authorization || '';
 
-            console.log(`authorization:${token}`);
-            console.log(`forwardedToken:${forwardedToken}`);
+            console.log(`headers:${JSON.stringify(req.headers)}`);
 
-
-            const user = await new UserDataSource().getUserFor(token);
+            const user = await new UserDataSource().getUserFor(forwardedToken);
 
             const session = { user: user };
 
