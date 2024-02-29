@@ -98,14 +98,12 @@ export function limitSize(limitFilters: LimitSizeOnFilterAttribute[], backwardCo
                 let limitSizes: number[] = [];
                 limitFilters.forEach(filter => {
                     const filtered = filter.onFilter(context, result);
-                    console.log(`filtered: ${filtered}`);
                     if (filtered)
                         limitSizes.push(filter.limit);
                 });
                 let limit = Math.min(...limitSizes);
                 if (!backwardCompatible) limit = Math.max(...limitSizes);
                 const after = result.slice(0, limit);
-                console.log('after', `${JSON.stringify(after)}`);
                 return after;
             }
             return result;
