@@ -5,7 +5,6 @@ import { GraphQLError } from 'graphql';
 export interface UserInterface {
     id: string;
     name: string;
-    role: string[];
     roles: string[];
     permissions: string[];
     hasRole: (roleName: string) => boolean;
@@ -26,7 +25,6 @@ export interface KeycloakAccessTokenContent {
     preferred_username: string;
     given_name: string;
     family_name: string;
-    role: string[];
     email: string;
 }
 
@@ -37,7 +35,6 @@ export class KeycloakAccessTokenUser implements UserInterface {
     id: string;
     name: string;
     roles: string[];
-    role: string[];
     permissions: string[];
 
     constructor(resource: string, accessTokenContent: KeycloakAccessTokenContent) {
@@ -46,7 +43,6 @@ export class KeycloakAccessTokenUser implements UserInterface {
         this.id = this.content.sub;
         this.name = this.content.name;
         this.roles = this.content.resource_access[resource]['roles'];
-        this.role = this.content.role;
         this.permissions = this.content.resource_access[resource]['roles'];
     }
 

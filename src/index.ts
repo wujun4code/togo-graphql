@@ -52,7 +52,7 @@ app.use(
 
             const user = new KeycloakAccessTokenUser(process.env.KEYCLOAK_RESOURCE, keycloakAccessToken);
 
-            console.log(`user: ${user.name}:${JSON.stringify(user.role)}`);
+            console.log(`user: ${user.name}:${JSON.stringify(user.roles)}`);
             const session = { user: user };
 
             const acl = new ACL();
