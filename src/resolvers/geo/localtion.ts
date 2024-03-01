@@ -19,5 +19,9 @@ export const resolvers = {
         daily(parent, args, context, info) {
             return context.dataSources.weather.forecastDaily(context, parent.id, args.lang, args.daily, args.limit);
         },
+        air(parent, args, context, info) {
+            const now = context.dataSources.air.getNow(context, parent.id, args.lang);
+            return { now };
+        },
     }
 };

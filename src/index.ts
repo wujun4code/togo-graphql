@@ -2,7 +2,7 @@ import { ApolloServer } from '@apollo/server';
 import { startStandaloneServer } from '@apollo/server/standalone';
 import { InMemoryLRUCache } from '@apollo/utils.keyvaluecache';
 import { ServerContext, KeycloakAccessTokenUser } from './contracts/index.js';
-import { LocationDataSource, WeatherDataSource, UserDataSource, IRESTDataSourceConfig } from './datasources/index.js';
+import { LocationDataSource, WeatherDataSource, AirDataSource, IRESTDataSourceConfig } from './datasources/index.js';
 import responseCachePlugin from '@apollo/server-plugin-response-cache';
 import { DataSourceConfig } from '@apollo/datasource-rest';
 import { expressMiddleware } from '@apollo/server/express4';
@@ -65,6 +65,7 @@ app.use(
                 dataSources: {
                     location: new LocationDataSource(restDataSourceConfig),
                     weather: new WeatherDataSource(restDataSourceConfig),
+                    air: new AirDataSource(restDataSourceConfig),
                 },
                 services: { acl }
             };

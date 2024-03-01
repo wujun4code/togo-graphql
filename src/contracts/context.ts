@@ -1,4 +1,4 @@
-import { LocationDataSource, WeatherDataSource, UserDataSource } from '../datasources/index.js';
+import { LocationDataSource, WeatherDataSource, UserDataSource, AirDataSource } from '../datasources/index.js';
 import { ACL } from '../decorators/index.js';
 import { GraphQLError } from 'graphql';
 
@@ -77,6 +77,7 @@ export interface ServerContext {
     dataSources: {
         location: LocationDataSource;
         weather: WeatherDataSource,
+        air: AirDataSource,
     };
 }
 
