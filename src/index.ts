@@ -38,7 +38,7 @@ function parseJwt(token) {
 
 app.use(
     '/',
-    cors<cors.CorsRequest>({credentials: true, origin: '*'}),
+    cors<cors.CorsRequest>(),
     express.json(),
     // expressMiddleware accepts the same arguments:
     // an Apollo Server instance and optional configuration options
