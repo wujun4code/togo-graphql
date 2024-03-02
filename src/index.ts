@@ -38,7 +38,7 @@ function parseJwt(token) {
 
 app.use(
     '/',
-    cors<cors.CorsRequest>(),
+    cors<cors.CorsRequest>({credentials: true, origin: 'https://weather-web.shouyicheng.com/'}),
     express.json(),
     // expressMiddleware accepts the same arguments:
     // an Apollo Server instance and optional configuration options
@@ -52,7 +52,7 @@ app.use(
 
             const user = new KeycloakAccessTokenUser(process.env.KEYCLOAK_RESOURCE, keycloakAccessToken);
 
-            console.log(`user: ${user.name}:${JSON.stringify(user.roles)}`);
+            //console.log(`user: ${user.name}:${JSON.stringify(user.roles)}`);
             const session = { user: user };
 
             const acl = new ACL();
