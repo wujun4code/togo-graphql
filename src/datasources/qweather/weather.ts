@@ -43,7 +43,7 @@ export class WeatherDataSource extends QWeatherDataSource {
     @limitSize(
         [
             {
-                limit: 12, onFilter: ({ session: { user } }, result) => { return user.hasRole('basic'); }
+                limit: 6, onFilter: ({ session: { user } }, result) => { return user.hasRole('basic'); }
             },
             {
                 limit: 24, onFilter: ({ session: { user } }, result) => { return user.hasRole('subscribed'); }
@@ -66,14 +66,14 @@ export class WeatherDataSource extends QWeatherDataSource {
         return data.hourly;
     }
 
-    @hasRole(['subscribed'])
+    @hasRole(['basic'])
     @limitSize(
         [
             {
-                limit: 2, onFilter: ({ session: { user } }, result) => { return user.hasRole('basic'); }
+                limit: 5, onFilter: ({ session: { user } }, result) => { return user.hasRole('basic'); }
             },
             {
-                limit: 4, onFilter: ({ session: { user } }, result) => { return user.hasRole('subscribed'); }
+                limit: 7, onFilter: ({ session: { user } }, result) => { return user.hasRole('subscribed'); }
             },
             {
                 limit: 15, onFilter: ({ session: { user } }, result) => { return user.hasRole('enterprise'); }
