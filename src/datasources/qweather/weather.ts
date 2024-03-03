@@ -70,10 +70,10 @@ export class WeatherDataSource extends QWeatherDataSource {
     @limitSize(
         [
             {
-                limit: 5, onFilter: ({ session: { user } }, result) => { return user.hasRole('basic'); }
+                limit: 6, onFilter: ({ session: { user } }, result) => { return user.hasRole('basic'); }
             },
             {
-                limit: 7, onFilter: ({ session: { user } }, result) => { return user.hasRole('subscribed'); }
+                limit: 10, onFilter: ({ session: { user } }, result) => { return user.hasRole('subscribed'); }
             },
             {
                 limit: 15, onFilter: ({ session: { user } }, result) => { return user.hasRole('enterprise'); }
