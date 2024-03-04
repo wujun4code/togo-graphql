@@ -33,7 +33,7 @@ node -v
 v18.19.1
 ```
 
-并且修改 .env 里面的 qweatherKey，用你的和风天气的项目对应的 private key，注意保密，不要上传到开源平台。
+并且修改 `.env.sample` 里面的 qweatherKey 改用你的和风天气的项目对应的 private key，然后将 `.env.sample` 重命名为 `.env`，注意保密，不要上传到开源平台。
 
 然后执行
 
