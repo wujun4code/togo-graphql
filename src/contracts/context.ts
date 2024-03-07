@@ -1,4 +1,4 @@
-import { LocationDataSource, WeatherDataSource, UserDataSource, AirDataSource } from '../datasources/index.js';
+import { LocationDataSource, WeatherDataSource, UserDataSource, AirDataSource, OpenWeatherMapDataSource, OpenWeatherMap } from '../datasources/index.js';
 import { ACL } from '../decorators/index.js';
 import { GraphQLError } from 'graphql';
 
@@ -78,6 +78,7 @@ export interface ServerContext {
         location: LocationDataSource;
         weather: WeatherDataSource,
         air: AirDataSource,
+        owmWeather: OpenWeatherMap.WeatherDataSource,
     };
 }
 

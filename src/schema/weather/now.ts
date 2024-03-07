@@ -32,5 +32,6 @@ type Now {
   
   type Query {
     getNowByLocationId(locationId: String!, lang: String! = "zh-hans"): Now!
+    getNowByLocation(location: String!, lang: String! = "zh-hans"): Now!
   }
 `;
