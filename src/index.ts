@@ -20,6 +20,23 @@ const PORT = process.env.PORT || 4000;
 
 const app = express();
 
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
+
+async function main() {
+    // ... you will write your Prisma Client queries here
+}
+
+main()
+    .then(async () => {
+        await prisma.$disconnect()
+    })
+    .catch(async (e) => {
+        console.error(e)
+        await prisma.$disconnect()
+        process.exit(1)
+    });
 
 const httpServer = http.createServer(app);
 
@@ -35,6 +52,14 @@ await server.start();
 function parseJwt(token) {
     return JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
 }
+
+app.get('/feed', async (req, res) => {
+    const posts = await prisma.post.findMany({
+        where: { published: true },
+        include: { author: true },
+    })
+    res.json(posts)
+});
 
 app.use(
     '/',
