@@ -251,6 +251,27 @@ export function hasPermission(permissions: string[]) {
     };
 }
 
+export function checkRole(context: ServerContext, roles: string[]) {
+    const {
+        services: { acl },
+        session: { user }
+    }: {
+        services: ServiceContext;
+        session: SessionContext
+    } = context;
+
+    const authorized = acl.hasRole(user, roles);
+    if (authorized == false) {
+        throw new GraphQLError(`no authorized role for current user`, {
+            extensions: {
+                code: 'Forbidden',
+            },
+        });
+    }
+
+    return true;
+}
+
 export function hasRole(roles: string[]) {
 
     return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
@@ -264,14 +285,7 @@ export function hasRole(roles: string[]) {
                 services: ServiceContext;
                 session: SessionContext
             } = args[0];
-            const authorized = acl.hasRole(user, roles);
-            if (authorized == false) {
-                throw new GraphQLError(`no authorized role for current user`, {
-                    extensions: {
-                        code: 'Forbidden',
-                    },
-                });
-            }
+            checkRole(args[0], roles);
             const result = await original.call(this, ...args);
             return result;
         }
