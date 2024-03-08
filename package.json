@@ -7,6 +7,7 @@
     "migrate:deploy": "npx prisma migrate deploy",
     "migrate:dev": "npx prisma migrate dev",
     "generate": "npx prisma generate",
+    "build": "npm run generate",
     "compile": "tsc",
     "dev": "nodemon",
     "start": "npm run compile && node ./dist/index.js"
