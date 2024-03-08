@@ -5,9 +5,8 @@ import {
     WebHookDataSource, LocationPointDataSource,
 } from '../datasources/index.js';
 
-import { WebHookService } from '../services';
+import { WebHookService } from '../services/index.js';
 import { ACL } from '../decorators/index.js';
-import { GraphQLError } from 'graphql';
 
 export interface UserInterface {
     id: string;

@@ -2,15 +2,14 @@ import { PrismaClient } from '@prisma/client';
 import { SessionContext } from '../../contracts/index.js';
 import { PrismaDataSource } from './base.js';
 import { ServerContext } from '../../contracts/index.js';
-import { ensureUserCreated } from '../../decorators/index.js';
-
+import { injectUser } from '../../decorators/index.js';
 
 export class TravelPlanDataSource extends PrismaDataSource {
     constructor(config: { client: PrismaClient, session: SessionContext }) {
         super(config);
     }
 
-    @ensureUserCreated()
+    @injectUser()
     async create(context: ServerContext, input: any) {
         const created = await this.prisma.travelPlan.create({
             data: {

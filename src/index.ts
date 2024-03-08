@@ -16,7 +16,6 @@ import { typeDefs } from './schema/index.js';
 import { ApolloServerPluginCacheControl } from '@apollo/server/plugin/cacheControl';
 import { ACL } from './decorators/index.js';
 import { WebHookService } from './services/index.js';
-
 import http from 'http';
 import cors from 'cors';
 import express, { Request, Response, NextFunction } from 'express';
@@ -27,7 +26,7 @@ const PORT = process.env.PORT || 4000;
 
 const app = express();
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 
 async function main() {
     // ... you will write your Prisma Client queries here
@@ -103,7 +102,6 @@ app.use(
         context: async ({ req, res }) => {
             const { cache } = server;
 
-            //@ts-ignore
             const accessToken = extractToken(req, res);
 
             const keycloakAccessToken = parseJwt(accessToken as string);
@@ -145,35 +143,3 @@ app.use(
 await new Promise<void>((resolve) => httpServer.listen({ port: PORT }, resolve));
 
 console.log(`🚀 Server ready at http://localhost:${PORT}/`);
-
-// const { url } = await startStandaloneServer(server, {
-//     context: async ({ req, res }) => {
-//         const { cache } = server;
-//         const token = req.headers.authorization || '';
-
-//         const userDataSource = new UserDataSource();
-//         const acl = new ACL();
-
-//         const user = await userDataSource.getUserFor(token);
-
-//         const session = { user };
-
-//         const restDataSourceConfig: IRESTDataSourceConfig = { session: session, restConfig: { cache: cache } };
-
-//         const contextValue: ServerContext = {
-//             http: { req, res },
-//             session: session,
-//             dataSources: {
-//                 location: new LocationDataSource(restDataSourceConfig),
-//                 weather: new WeatherDataSource(restDataSourceConfig),
-//                 user: userDataSource,
-//             },
-//             services: { acl }
-//         };
-
-//         return contextValue;
-//     },
-//     listen: { port: 4000 },
-// });
-
-//console.log(`🚀  Server ready at: ${url}`);

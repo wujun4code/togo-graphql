@@ -2,6 +2,7 @@ import * as fastq from "fastq";
 import type { queueAsPromised } from "fastq";
 import { ServerContext } from '../contracts/index.js';
 import { PrismaClient } from '@prisma/client';
+import axios from 'axios';
 
 type WakeWebHookTask = {
     resource: string;
@@ -12,6 +13,7 @@ type WakeWebHookTask = {
 
 type PushWebHookTask = {
     url: string;
+    headers: any;
     data: any;
 }
 
@@ -34,14 +36,30 @@ export class WebHookService {
         try {
             const webHooks = await this.prisma.webHook.findMany({
                 select: {
+                    headers: true,
+                    url: true,
+                    id: true
+                },
+                where: {
                     events: {
-                        where: {
+                        every: {
                             resource: arg.resource,
-                            operation: arg.operation,
+                            operation: arg.operation
                         }
                     }
                 }
             });
+
+            webHooks.forEach(element => {
+                this.pushQ.push({
+                    url: element.url,
+                    headers: element.headers.map(h => {
+                        return { key: h.key, value: h.value };
+                    }),
+                    data: arg,
+                });
+            });
+
             console.log(`webHooks:${JSON.stringify(webHooks)}`);
         } catch (error) {
             console.error(error);
@@ -49,7 +67,7 @@ export class WebHookService {
     }
 
     async sendRequest(arg: PushWebHookTask) {
-
+        await axios.post(arg.url, arg.data, { headers: arg.headers });
     }
 
     async invokeCreate(context: ServerContext, resource: string, operation: string, after: any) {

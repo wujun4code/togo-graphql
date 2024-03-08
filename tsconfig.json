@@ -8,8 +8,8 @@
             "es2020"
         ],
         "target": "es2020",
-        "module": "esnext",
-        "moduleResolution": "node",
+        "module": "Node16",
+        "moduleResolution": "Node16",
         "esModuleInterop": true,
         "experimentalDecorators": true,
         "types": [
