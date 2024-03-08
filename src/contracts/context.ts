@@ -1,12 +1,20 @@
-import { LocationDataSource, WeatherDataSource, UserDataSource, AirDataSource, OpenWeatherMapDataSource, OpenWeatherMap } from '../datasources/index.js';
+import {
+    LocationDataSource, WeatherDataSource,
+    AirDataSource, OpenWeatherMap,
+    PrismaDataSource, TravelPlanDataSource,
+    WebHookDataSource, LocationPointDataSource,
+} from '../datasources/index.js';
+
+import { WebHookService } from '../services/index.js';
 import { ACL } from '../decorators/index.js';
-import { GraphQLError } from 'graphql';
 
 export interface UserInterface {
     id: string;
+    sub: string;
     name: string;
     roles: string[];
     permissions: string[];
+    email: string;
     hasRole: (roleName: string) => boolean;
     hasPermission: (permission: string) => boolean;
 }
@@ -33,6 +41,8 @@ export class KeycloakAccessTokenUser implements UserInterface {
     content: KeycloakAccessTokenContent;
 
     id: string;
+    sub: string;
+    email: string;
     name: string;
     roles: string[];
     permissions: string[];
@@ -40,7 +50,8 @@ export class KeycloakAccessTokenUser implements UserInterface {
     constructor(resource: string, accessTokenContent: KeycloakAccessTokenContent) {
         if (!accessTokenContent) return;
         this.content = accessTokenContent;
-        this.id = this.content.sub;
+        this.sub = this.content.sub;
+        this.email = this.content.email;
         this.name = this.content.name;
         this.roles = this.content.resource_access[resource]['roles'];
         this.permissions = this.content.resource_access[resource]['roles'];
@@ -56,13 +67,13 @@ export class KeycloakAccessTokenUser implements UserInterface {
     }
 }
 
-
 export interface SessionContext {
     user: UserInterface,
 }
 
 export interface ServiceContext {
     acl: ACL;
+    webHook: WebHookService;
 }
 
 export interface HttpContext {
@@ -70,15 +81,21 @@ export interface HttpContext {
     res: any;
 }
 
+export interface IDataSources {
+    location: LocationDataSource;
+    weather: WeatherDataSource;
+    air: AirDataSource;
+    owmWeather: OpenWeatherMap.WeatherDataSource;
+    prisma: PrismaDataSource;
+    travelPlan: TravelPlanDataSource;
+    webHook: WebHookDataSource;
+    locationPoint: LocationPointDataSource;
+}
+
 export interface ServerContext {
     http: HttpContext;
-    session: SessionContext,
+    session: SessionContext;
     services: ServiceContext;
-    dataSources: {
-        location: LocationDataSource;
-        weather: WeatherDataSource,
-        air: AirDataSource,
-        owmWeather: OpenWeatherMap.WeatherDataSource,
-    };
+    dataSources: IDataSources;
 }
 

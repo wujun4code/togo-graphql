@@ -1,0 +1,72 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          Int          @id @default(autoincrement())
+  email       String       @unique
+  name        String?
+  sub         String       @unique
+  posts       Post[]
+  travelPlans TravelPlan[]
+}
+
+model Post {
+  id        Int     @id @default(autoincrement())
+  title     String
+  content   String?
+  published Boolean @default(false)
+  authorId  Int
+  author    User    @relation(fields: [authorId], references: [id])
+}
+
+model TravelPlan {
+  id              Int     @id @default(autoincrement())
+  content         String?
+  published       Boolean @default(false)
+  creatorId       Int
+  creator         User    @relation(fields: [creatorId], references: [id])
+  originId        Int
+  origin          LocationPoint @relation("OriginLocationPoint", fields: [originId], references: [id])
+  destinationId   Int
+  destination     LocationPoint @relation("DestinationLocationPoint", fields: [destinationId], references: [id])
+}
+
+model LocationPoint {
+  id        Int     @id @default(autoincrement())
+  lat       Float
+  lon       Float
+  onOrigins  TravelPlan[] @relation("OriginLocationPoint")
+  onDestinations  TravelPlan[] @relation("DestinationLocationPoint")
+
+  @@unique([lat, lon], name: "unique_lat_lon_constraint")
+}
+
+model WebHook {
+  id        Int     @id @default(autoincrement())
+  name      String  @unique
+  url       String
+  headers   WebHookHeader[]
+  events    WebHookEvent[]
+}
+
+model WebHookHeader {
+   id                Int     @id @default(autoincrement())
+   webHook           WebHook @relation(fields: [webHookId], references: [id])
+   webHookId         Int
+   key               String
+   value             String
+}
+
+model WebHookEvent {
+  id                Int     @id @default(autoincrement())
+  webHook           WebHook @relation(fields: [webHookId], references: [id])
+  webHookId         Int
+  resource          String
+  operation         String
+}
