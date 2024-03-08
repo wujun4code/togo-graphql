@@ -62,11 +62,12 @@ interface CustomRequest extends Request {
 const extractToken = (req: CustomRequest, res: Response) => {
     let token: string | null = null;
 
+    const forwardedTokenKey = 'x-forwarded-access-token';
+    token = req.headers[forwardedTokenKey].toString();
+    if (token) return token;
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.toLowerCase().startsWith('bearer ')) {
         token = authHeader.slice(7);
-    } else if (req.headers['x-forwarded-access-token']) {
-        token = req.headers['x-forwarded-access-token'] as string;
     }
 
     return token;
