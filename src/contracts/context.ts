@@ -2,13 +2,13 @@ import {
     LocationDataSource, WeatherDataSource,
     AirDataSource, OpenWeatherMap,
     PrismaDataSource, TravelPlanDataSource,
-    WebHookDataSource, LocationPointDataSource,
+    WebHookDataSource, LocationPointDataSource, ACLDataSource
 } from '../datasources/index.js';
 
 import { WebHookService } from '../services/index.js';
 import { ACL } from '../decorators/index.js';
 
-export interface UserInterface {
+export interface OAuth2UserInterface {
     id: string;
     sub: string;
     name: string;
@@ -17,6 +17,15 @@ export interface UserInterface {
     email: string;
     hasRole: (roleName: string) => boolean;
     hasPermission: (permission: string) => boolean;
+}
+
+export interface ExtendedRole {
+    name: string;
+    id: number;
+}
+
+export interface ExtendedUserInterface extends OAuth2UserInterface {
+    extendedRoles: ExtendedRole[];
 }
 
 export interface KeycloakAccessTokenContent {
@@ -36,7 +45,7 @@ export interface KeycloakAccessTokenContent {
     email: string;
 }
 
-export class KeycloakAccessTokenUser implements UserInterface {
+export class KeycloakAccessTokenUser implements OAuth2UserInterface {
 
     content: KeycloakAccessTokenContent;
 
@@ -68,7 +77,8 @@ export class KeycloakAccessTokenUser implements UserInterface {
 }
 
 export interface SessionContext {
-    user: UserInterface,
+    user: ExtendedUserInterface,
+    http: HttpContext;
 }
 
 export interface ServiceContext {
@@ -90,10 +100,10 @@ export interface IDataSources {
     travelPlan: TravelPlanDataSource;
     webHook: WebHookDataSource;
     locationPoint: LocationPointDataSource;
+    acl: ACLDataSource
 }
 
 export interface ServerContext {
-    http: HttpContext;
     session: SessionContext;
     services: ServiceContext;
     dataSources: IDataSources;

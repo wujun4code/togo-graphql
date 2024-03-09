@@ -1,8 +1,9 @@
 import { checkRole, ensureUserInitialized } from '../../decorators/index.js';
+import { GraphQLError } from 'graphql';
 export const resolvers = {
     Query: {
         getTravelPlan: async (parent, args, context, info) => {
-            return context.dataSources.travelPlan.create(context, { data: args.input });
+            return context.dataSources.travelPlan.findUnique(context, { id: parseInt(args.id) });
         },
         getAllTravelPlans: async (parent, args, context, info) => {
             checkRole(context, ['admin']);
@@ -19,10 +20,16 @@ export const resolvers = {
             return context.dataSources.travelPlan.create(context, args.input);
         },
         updateTravelPlan(parent, args, context, info) {
-            return context.dataSources.weather.forecastHourly(parent.id, args.lang, args.hourly, args.limit);
+            const { id } = args.input;
+            if (!id) throw new GraphQLError(`no id found`, {
+                extensions: {
+                    code: 'Bad Request',
+                },
+            });
+            return context.dataSources.travelPlan.updateUnique(context, args.input);
         },
         deleteTravelPlan(parent, args, context, info) {
-            return context.dataSources.weather.forecastDaily(context, parent.id, args.lang, args.daily, args.limit);
+            return context.dataSources.travelPlan.deleteUnique(context, { id: parseInt(args.id) });
         },
     },
     TravelPlan: {

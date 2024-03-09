@@ -7,13 +7,129 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Role {
+  id                Int                 @id @default(autoincrement())
+  name              String              @unique
+  description       String
+  users             RoleUser[]
+  aclRules          ACLRule[]
+  TravelPlanACLRule TravelPlanACLRule[]
+}
+
 model User {
-  id          Int          @id @default(autoincrement())
-  email       String       @unique
-  name        String?
-  sub         String       @unique
-  posts       Post[]
-  travelPlans TravelPlan[]
+  id                Int                 @id @default(autoincrement())
+  email             String              @unique
+  name              String?
+  sub               String              @unique
+  posts             Post[]
+  travelPlans       TravelPlan[]
+  roles             RoleUser[]
+  ACLRule           ACLRule[]
+  TravelPlanACLRule TravelPlanACLRule[]
+}
+
+model RoleUser {
+  id     Int  @id @default(autoincrement())
+  roleId Int
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+  role   Role @relation(fields: [roleId], references: [id])
+
+  @@index([roleId, userId], name: "unique_user_role")
+}
+
+model Resource {
+  id         Int          @id @default(autoincrement())
+  name       String       @unique
+  aclRules   ACLRule[]
+  TravelPlan TravelPlan[]
+}
+
+model ACLRule {
+  id       Int     @id @default(autoincrement())
+  wildcard String?
+
+  roleId     Int?
+  resourceId Int?
+
+  userId         Int?
+  resourceItemId Int?
+
+  readPermission  Boolean
+  writePermission Boolean
+
+  role     Role?     @relation(fields: [roleId], references: [id])
+  resource Resource? @relation(fields: [resourceId], references: [id])
+
+  user User? @relation(fields: [userId], references: [id])
+}
+
+model TravelPlanACLRule {
+  id       Int     @id @default(autoincrement())
+  wildcard String?
+
+  roleId Int?
+  userId Int?
+
+  role Role? @relation(fields: [roleId], references: [id])
+  user User? @relation(fields: [userId], references: [id])
+
+  readPermission  Boolean
+  writePermission Boolean
+
+  travelPlanId Int?
+  travelPlan   TravelPlan? @relation(fields: [travelPlanId], references: [id])
+}
+
+model TravelPlan {
+  id            Int           @id @default(autoincrement())
+  content       String?
+  published     Boolean       @default(false)
+  creatorId     Int
+  creator       User          @relation(fields: [creatorId], references: [id])
+  originId      Int
+  origin        LocationPoint @relation("OriginLocationPoint", fields: [originId], references: [id])
+  destinationId Int
+  destination   LocationPoint @relation("DestinationLocationPoint", fields: [destinationId], references: [id])
+
+  resourceId Int?
+  resource   Resource? @relation(fields: [resourceId], references: [id])
+
+  aclRules TravelPlanACLRule[]
+}
+
+model LocationPoint {
+  id             Int          @id @default(autoincrement())
+  lat            Float
+  lon            Float
+  onOrigins      TravelPlan[] @relation("OriginLocationPoint")
+  onDestinations TravelPlan[] @relation("DestinationLocationPoint")
+
+  @@unique([lat, lon], name: "unique_lat_lon_constraint")
+}
+
+model WebHook {
+  id      Int             @id @default(autoincrement())
+  name    String          @unique
+  url     String
+  headers WebHookHeader[]
+  events  WebHookEvent[]
+}
+
+model WebHookHeader {
+  id        Int     @id @default(autoincrement())
+  webHook   WebHook @relation(fields: [webHookId], references: [id])
+  webHookId Int
+  key       String
+  value     String
+}
+
+model WebHookEvent {
+  id        Int     @id @default(autoincrement())
+  webHook   WebHook @relation(fields: [webHookId], references: [id])
+  webHookId Int
+  resource  String
+  operation String
 }
 
 model Post {
@@ -23,50 +139,4 @@ model Post {
   published Boolean @default(false)
   authorId  Int
   author    User    @relation(fields: [authorId], references: [id])
-}
-
-model TravelPlan {
-  id              Int     @id @default(autoincrement())
-  content         String?
-  published       Boolean @default(false)
-  creatorId       Int
-  creator         User    @relation(fields: [creatorId], references: [id])
-  originId        Int
-  origin          LocationPoint @relation("OriginLocationPoint", fields: [originId], references: [id])
-  destinationId   Int
-  destination     LocationPoint @relation("DestinationLocationPoint", fields: [destinationId], references: [id])
-}
-
-model LocationPoint {
-  id        Int     @id @default(autoincrement())
-  lat       Float
-  lon       Float
-  onOrigins  TravelPlan[] @relation("OriginLocationPoint")
-  onDestinations  TravelPlan[] @relation("DestinationLocationPoint")
-
-  @@unique([lat, lon], name: "unique_lat_lon_constraint")
-}
-
-model WebHook {
-  id        Int     @id @default(autoincrement())
-  name      String  @unique
-  url       String
-  headers   WebHookHeader[]
-  events    WebHookEvent[]
-}
-
-model WebHookHeader {
-   id                Int     @id @default(autoincrement())
-   webHook           WebHook @relation(fields: [webHookId], references: [id])
-   webHookId         Int
-   key               String
-   value             String
-}
-
-model WebHookEvent {
-  id                Int     @id @default(autoincrement())
-  webHook           WebHook @relation(fields: [webHookId], references: [id])
-  webHookId         Int
-  resource          String
-  operation         String
 }

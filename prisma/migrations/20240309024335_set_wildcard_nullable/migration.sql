@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "ACLRule" ALTER COLUMN "wildcard" DROP NOT NULL;

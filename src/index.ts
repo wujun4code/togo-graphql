@@ -1,11 +1,12 @@
 import { ApolloServer } from '@apollo/server';
 import { startStandaloneServer } from '@apollo/server/standalone';
 import { InMemoryLRUCache } from '@apollo/utils.keyvaluecache';
-import { ServerContext, KeycloakAccessTokenUser } from './contracts/index.js';
+import { ServerContext, KeycloakAccessTokenUser, ExtendedUserInterface } from './contracts/index.js';
 import {
     LocationDataSource, WeatherDataSource, AirDataSource,
     IRESTDataSourceConfig, OpenWeatherMap, PrismaDataSource,
-    TravelPlanDataSource, WebHookDataSource, LocationPointDataSource
+    TravelPlanDataSource, WebHookDataSource, LocationPointDataSource,
+    ACLDataSource
 } from './datasources/index.js';
 import responseCachePlugin from '@apollo/server-plugin-response-cache';
 import { DataSourceConfig } from '@apollo/datasource-rest';
@@ -29,22 +30,16 @@ const app = express();
 const prisma = new PrismaClient();
 
 async function main() {
-    // ... you will write your Prisma Client queries here
+
 }
 
-main()
-    .then(async () => {
-        await prisma.$disconnect();
-    })
-    .catch(async (e) => {
-        console.error(e);
-        await prisma.$disconnect();
-        process.exit(1);
-    });
-    
-
-const webHookService = new WebHookService({ prisma });
-webHookService.start();
+// await main().then(async () => {
+//     await prisma.$disconnect();
+// }).catch(async (e) => {
+//     console.error(e);
+//     await prisma.$disconnect();
+//     process.exit(1);
+// });
 
 const httpServer = http.createServer(app);
 
@@ -107,10 +102,17 @@ app.use(
 
             const keycloakAccessToken = parseJwt(accessToken as string);
 
-            const user = new KeycloakAccessTokenUser(process.env.KEYCLOAK_RESOURCE, keycloakAccessToken);
+            const oauth2User = new KeycloakAccessTokenUser(process.env.KEYCLOAK_RESOURCE, keycloakAccessToken);
 
+            const user: ExtendedUserInterface = {
+                ...oauth2User,
+                extendedRoles: []
+            };
+
+            const http = { req, res };
+            
             //console.log(`user: ${user.name}:${JSON.stringify(user.roles)}`);
-            const session = { user: user };
+            const session = { user: user, http: http };
 
             const acl = new ACL();
 
@@ -118,9 +120,10 @@ app.use(
 
             const prismaConfig = { client: prisma, session: session };
             const webHookDataSource = new WebHookDataSource(prismaConfig);
+            const webHookService = new WebHookService({ prisma, session });
+            webHookService.start();
 
             const contextValue: ServerContext = {
-                http: { req, res },
                 session: session,
                 dataSources: {
                     location: new LocationDataSource(restDataSourceConfig),
@@ -131,6 +134,7 @@ app.use(
                     travelPlan: new TravelPlanDataSource(prismaConfig),
                     webHook: webHookDataSource,
                     locationPoint: new LocationPointDataSource(prismaConfig),
+                    acl: new ACLDataSource(prismaConfig)
                 },
                 services: { acl, webHook: webHookService }
             };
