@@ -10,3 +10,4 @@ export * from './prisma/base.js';
 export * from './prisma/travel-plan.js';
 export * from './prisma/webhook.js';
 export * from './prisma/location-point.js';
+export * from './prisma/acl.js';

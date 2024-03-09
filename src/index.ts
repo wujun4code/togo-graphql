@@ -1,11 +1,12 @@
 import { ApolloServer } from '@apollo/server';
 import { startStandaloneServer } from '@apollo/server/standalone';
 import { InMemoryLRUCache } from '@apollo/utils.keyvaluecache';
-import { ServerContext, KeycloakAccessTokenUser } from './contracts/index.js';
+import { ServerContext, KeycloakAccessTokenUser, ExtendedUserInterface } from './contracts/index.js';
 import {
     LocationDataSource, WeatherDataSource, AirDataSource,
     IRESTDataSourceConfig, OpenWeatherMap, PrismaDataSource,
-    TravelPlanDataSource, WebHookDataSource, LocationPointDataSource
+    TravelPlanDataSource, WebHookDataSource, LocationPointDataSource,
+    ACLDataSource
 } from './datasources/index.js';
 import responseCachePlugin from '@apollo/server-plugin-response-cache';
 import { DataSourceConfig } from '@apollo/datasource-rest';
@@ -101,8 +102,15 @@ app.use(
 
             const keycloakAccessToken = parseJwt(accessToken as string);
 
-            const user = new KeycloakAccessTokenUser(process.env.KEYCLOAK_RESOURCE, keycloakAccessToken);
+            const oauth2User = new KeycloakAccessTokenUser(process.env.KEYCLOAK_RESOURCE, keycloakAccessToken);
+
+            const user: ExtendedUserInterface = {
+                ...oauth2User,
+                extendedRoles: []
+            };
+
             const http = { req, res };
+            
             //console.log(`user: ${user.name}:${JSON.stringify(user.roles)}`);
             const session = { user: user, http: http };
 
@@ -126,6 +134,7 @@ app.use(
                     travelPlan: new TravelPlanDataSource(prismaConfig),
                     webHook: webHookDataSource,
                     locationPoint: new LocationPointDataSource(prismaConfig),
+                    acl: new ACLDataSource(prismaConfig)
                 },
                 services: { acl, webHook: webHookService }
             };

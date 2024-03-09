@@ -11,23 +11,45 @@ export async function ensureUserInitialized(context) {
         dataSources: IDataSources
     } = context;
 
-    const sub = user.sub;
-    const userInDb = await prisma.prisma.user.findUnique({ where: { sub: sub } });
-    if (!userInDb) {
-        const newUserInDb = await prisma.prisma.user.create({
-            data: {
-                email: user.email,
-                sub: user.sub,
-                name: user.name,
-            }
-        });
-        context.session.user.id = newUserInDb.id.toString();
-    }
-    else {
-        context.session.user.id = userInDb.id.toString();
-    }
+    const createOrGetUser = await prisma.prisma.user.upsert({
+        where: { sub: user.sub },
+        update: {},
+        create: {
+            sub: user.sub,
+            name: user.name,
+            email: user.email,
+            roles: {
+                create: user.roles.map((roleName) => ({
+                    role: {
+                        connectOrCreate: {
+                            where: { name: roleName },
+                            create: { name: roleName, description: `the role named ${roleName}` }
+                        }
+                    }
+                })),
+            },
+        },
+        select: {
+            roles: {
+                select: {
+                    role: {
+                        select: {
+                            id: true,
+                            name: true
+                        }
+                    }
+                }
+            },
+            id: true,
+        }
+    });
+    context.session.user.id = createOrGetUser.id.toString();
+    const extendedRoles = createOrGetUser.roles.map(userRole => {
+        return { id: userRole.role.id, name: userRole.role.name };
+    });
+    context.session.user.extendedRoles = extendedRoles;
 
-    return context.session.user.id;
+    return context.session.user;
 }
 
 export function injectUser() {
@@ -36,8 +58,8 @@ export function injectUser() {
         const original = descriptor.value;
 
         descriptor.value = async function (...args) {
-            const userId = await ensureUserInitialized(args[0]);
-            args[0].session.user.id = userId;
+            const user = await ensureUserInitialized(args[0]);
+            args[0].session.user = user;
             const result = await original.call(this, ...args);
 
             return result;

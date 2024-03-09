@@ -5,7 +5,7 @@
   "exports": "./index.js",
   "scripts": {
     "migrate:deploy": "npx prisma migrate deploy",
-    "migrate:dev": "npx prisma migrate dev",
+    "migrate:dev": "npx prisma format && npx prisma migrate dev",
     "generate": "npx prisma generate",
     "build": "npm run generate",
     "compile": "tsc",

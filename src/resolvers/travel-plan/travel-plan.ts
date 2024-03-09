@@ -3,7 +3,7 @@ import { GraphQLError } from 'graphql';
 export const resolvers = {
     Query: {
         getTravelPlan: async (parent, args, context, info) => {
-            return context.dataSources.travelPlan.create(context, { data: args.input });
+            return context.dataSources.travelPlan.findUnique(context, { id: parseInt(args.id) });
         },
         getAllTravelPlans: async (parent, args, context, info) => {
             checkRole(context, ['admin']);
