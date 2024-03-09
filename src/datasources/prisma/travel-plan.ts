@@ -76,75 +76,12 @@ export class TravelPlanDataSource extends PrismaDataSource {
             }
         };
 
-        await this.createACLRules(aclRules, created.id);
+        const bulk = acl.createACLRules(aclRules, 'travelPlan', 'travelPlanId', created.id);
+        await Promise.all(bulk.map(data => this.prisma.travelPlanACLRule.create({ data: data })));
+
         webHook.invokeCreate(context, resourceName, 'create', created);
+
         return created;
-    }
-
-    async createACLRules(input: CreateACLRuleInput, id: number) {
-
-        let bulk = [];
-
-        for (const key in input) {
-            const item = this.mapToACLRule(key, input[key], id);
-            bulk.push(item);
-        }
-        const asyncResults = await Promise.all(bulk.map(data => this.prisma.travelPlanACLRule.create({ data: data })));
-    };
-
-    mapToACLRule(key: string, permission: ACLPermission, id: number) {
-        if (key === "*") {
-            return {
-                wildcard: '*',
-                travelPlanId: id,
-                writePermission: permission.write,
-                readPermission: permission.read
-            };
-        } else if (key.startsWith('role')) {
-            const [_, role] = key.split(':');
-
-            if (isNaN(parseInt(role, 10))) {
-                const data = {
-                    role: {
-                        connectOrCreate: {
-                            create: {
-                                name: role,
-                                description: `a role named ${role}`
-                            },
-                            where: {
-                                name: role
-                            }
-                        }
-                    },
-                    travelPlan: {
-                        connect: {
-                            id: id,
-                        }
-                    },
-                    writePermission: permission.write,
-                    readPermission: permission.read
-                };
-                return data;
-            }
-
-            else {
-                const data = {
-                    roleId: role,
-                    travelPlanId: id,
-                    writePermission: permission.write,
-                    readPermission: permission.read
-                }
-                return data;
-            }
-        } else if (key.startsWith('user')) {
-            const [_, userId] = key.split(':');
-            return {
-                userId: parseInt(userId),
-                travelPlanId: id,
-                writePermission: permission.write,
-                readPermission: permission.read
-            };
-        }
     }
 
     async addPublicPermission(id: number, permission: ACLPermission) {
