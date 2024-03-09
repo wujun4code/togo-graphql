@@ -27,7 +27,6 @@ export async function ensureUserInitialized(context) {
         context.session.user.id = userInDb.id.toString();
     }
 
-    console.log(`context.session.user.id:${context.session.user.id}`);
     return context.session.user.id;
 }
 

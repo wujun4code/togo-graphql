@@ -69,6 +69,7 @@ export class KeycloakAccessTokenUser implements UserInterface {
 
 export interface SessionContext {
     user: UserInterface,
+    http: HttpContext;
 }
 
 export interface ServiceContext {
@@ -93,7 +94,6 @@ export interface IDataSources {
 }
 
 export interface ServerContext {
-    http: HttpContext;
     session: SessionContext;
     services: ServiceContext;
     dataSources: IDataSources;

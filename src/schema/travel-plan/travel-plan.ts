@@ -33,9 +33,17 @@ input TravelPlanLocationInput {
   lon: Float!
 }
 
+input UpdateTravelPlanInput {
+  id: ID!
+  content: String
+  published: Boolean!
+  origin: TravelPlanLocationInput
+  destination: TravelPlanLocationInput
+}
+
 type Mutation {
-  createTravelPlan(input: CreateTravelPlanInput): TravelPlan
-  updateTravelPlan(id: ID!, content: String, published: Boolean!): TravelPlan
+  createTravelPlan(input: CreateTravelPlanInput!): TravelPlan
+  updateTravelPlan(input: UpdateTravelPlanInput!): TravelPlan
   deleteTravelPlan(id: ID!): TravelPlan
 }
 `

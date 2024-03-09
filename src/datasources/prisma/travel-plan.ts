@@ -50,8 +50,43 @@ export class TravelPlanDataSource extends PrismaDataSource {
                 },
             }
         });
-        context.services.webHook.invokeCreate(context, 'travel-plan', 'create', created);
+        const { services: { webHook } } = context;
+        webHook.invokeCreate(context, 'travel-plan', 'create', created);
         return created;
+    }
+
+    async deleteMany(context: ServerContext, filters: any) {
+        try {
+            const deletedRecords = await this.prisma.travelPlan.deleteMany({
+                where: filters,
+            });
+            const { services: { webHook } } = context;
+            webHook.invokeCreate(context, 'travel-plan', 'delete-many', deletedRecords);
+            return deletedRecords;
+        } catch (error) {
+            console.error(`Error deleting records: ${error.message}`);
+        }
+    }
+    
+    async updateUnique(context: ServerContext, data) {
+
+        try {
+            const { id, ...toUpdate } = data;
+
+            const updatedRecord = await this.prisma.travelPlan.update({
+                where: {
+                    id: parseInt(id),
+                },
+                data: toUpdate,
+            });
+
+            const { services: { webHook } } = context;
+            webHook.invokeCreate(context, 'travel-plan', 'update-unique', updatedRecord);
+            return updatedRecord;
+        }
+        catch (error) {
+            console.error(`Error deleting records: ${error.message}`);
+        }
     }
 
     async findMany(context: ServerContext, filters: any) {
