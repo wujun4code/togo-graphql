@@ -1,10 +1,7 @@
 import { PrismaClient } from '@prisma/client';
-import { SessionContext } from '../../contracts/index.js';
-import { PrismaDataSource } from './base.js';
-import { ServerContext } from '../../contracts/index.js';
+import { ServerContext, SessionContext } from '../../contracts/index.js';
 import { injectUser } from '../../decorators/index.js';
-import { ACLPermission, CreateACLRuleInput } from './acl.js';
-
+import { PrismaDataSource } from './base.js';
 
 const defaultACLRule = {
     "*": { read: false, write: false },
@@ -87,38 +84,9 @@ export class TravelPlanDataSource extends PrismaDataSource {
     async deleteMany(context: ServerContext, filters: any) {
         const { services: { webHook }, dataSources: { acl }, session: { user } } = context;
         try {
+            const aclWhere = acl.createDeleteFilters(filters, 'aclRules', user, 'writePermission');
             const deletedRecords = await this.prisma.travelPlan.deleteMany({
-                where: {
-                    OR: [
-                        {
-                            ...filters,
-                            aclRules: {
-                                some: {
-                                    userId: parseInt(user.id),
-                                    writePermission: true
-                                }
-                            }
-                        },
-                        {
-                            ...filters,
-                            aclRules: {
-                                some: {
-                                    roleId: { in: user.extendedRoles.map(r => r.id) },
-                                    writePermission: true
-                                }
-                            }
-                        },
-                        {
-                            ...filters,
-                            aclRules: {
-                                some: {
-                                    wildcard: "*",
-                                    writePermission: true
-                                }
-                            }
-                        }
-                    ]
-                },
+                where: aclWhere,
             });
             webHook.invokeCreate(context, 'travel-plan', 'delete-many', deletedRecords);
             return deletedRecords;
@@ -137,38 +105,11 @@ export class TravelPlanDataSource extends PrismaDataSource {
         const { services: { webHook }, dataSources: { acl }, session: { user } } = context;
         try {
             const { id, ...toUpdate } = data;
-
+            const aclWhere = acl.createUpdateFilters(id, 'aclRules', user, 'writePermission');
             const updatedRecord = await this.prisma.travelPlan.update({
-                where: {
-                    id: parseInt(id),
-                    OR: [{
-                        aclRules: {
-                            some: {
-                                userId: parseInt(user.id),
-                                writePermission: true
-                            }
-                        },
-                    }, {
-                        aclRules: {
-                            some: {
-                                roleId: { in: user.extendedRoles.map(r => r.id) },
-                                writePermission: true
-                            }
-                        }
-                    },
-                    {
-                        aclRules: {
-                            some: {
-                                wildcard: '*',
-                                writePermission: true
-                            }
-                        }
-                    }],
-                },
+                where: aclWhere,
                 data: toUpdate,
             });
-
-            const { services: { webHook } } = context;
             webHook.invokeCreate(context, 'travel-plan', 'update-unique', updatedRecord);
             return updatedRecord;
         }
@@ -179,41 +120,9 @@ export class TravelPlanDataSource extends PrismaDataSource {
 
     @injectUser()
     async findMany(context: ServerContext, filters: any) {
-        const { services: { webHook }, dataSources: { acl }, session: { user } } = context;
-        const aclFiltered = await this.prisma.travelPlan.findMany({
-            where: {
-                OR: [
-                    {
-                        ...filters,
-                        aclRules: {
-                            some: {
-                                userId: parseInt(user.id),
-                                readPermission: true
-                            }
-                        }
-                    },
-                    {
-                        ...filters,
-                        aclRules: {
-                            some: {
-                                roleId: { in: user.extendedRoles.map(r => r.id) },
-                                readPermission: true
-                            }
-                        }
-                    },
-                    {
-                        ...filters,
-                        aclRules: {
-                            some: {
-                                wildcard: '*',
-                                readPermission: true
-                            }
-                        }
-                    }
-                ]
-            }
-        });
-
+        const { dataSources: { acl }, session: { user } } = context;
+        const aclWhere = acl.createFindFilters(filters, 'aclRules', user, 'readPermission');
+        const aclFiltered = await this.prisma.travelPlan.findMany({ where: aclWhere });
         return aclFiltered;
     }
 
