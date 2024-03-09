@@ -1,8 +1,6 @@
 import { PrismaClient } from '@prisma/client';
-import { SessionContext } from '../../contracts/index.js';
+import { ExtendedUserInterface, SessionContext } from '../../contracts/index.js';
 import { PrismaDataSource } from './base.js';
-import { ServerContext } from '../../contracts/index.js';
-import { injectUser } from '../../decorators/index.js';
 
 export interface ACLPermission {
     write: boolean;
@@ -47,6 +45,76 @@ export class ACLDataSource extends PrismaDataSource {
         id: number) {
         const bulk = this.createACLRules(input, resourceField, resourceIdField, id);
         await Promise.all(bulk.map(data => prismaACLTable.create({ data: data })));
+    }
+
+    createFindFilters(filters: any, aclRulesRelationField: string, user: ExtendedUserInterface, permissionField: string) {
+        const where = {
+            OR: [
+                {
+                    ...filters,
+                    [aclRulesRelationField]: {
+                        some: {
+                            userId: parseInt(user.id),
+                            [permissionField]: true
+                        }
+                    }
+                },
+                {
+                    ...filters,
+                    [aclRulesRelationField]: {
+                        some: {
+                            roleId: { in: user.extendedRoles.map(r => r.id) },
+                            [permissionField]: true
+                        }
+                    }
+                },
+                {
+                    ...filters,
+                    [aclRulesRelationField]: {
+                        some: {
+                            wildcard: "*",
+                            [permissionField]: true
+                        }
+                    }
+                }
+            ]
+        };
+
+        return where;
+    }
+
+    createDeleteFilters(filters: any, aclRulesRelationField: string, user: ExtendedUserInterface, permissionField: string) {
+        return this.createFindFilters(filters, aclRulesRelationField, user, permissionField);
+    }
+
+    createUpdateFilters(id: number | string, aclRulesRelationField: string, user: ExtendedUserInterface, permissionField: string) {
+        const where = {
+            id: typeof id === 'string' ? parseInt(id) : id,
+            OR: [{
+                [aclRulesRelationField]: {
+                    some: {
+                        userId: parseInt(user.id),
+                        writePermission: true
+                    }
+                },
+            }, {
+                [aclRulesRelationField]: {
+                    some: {
+                        roleId: { in: user.extendedRoles.map(r => r.id) },
+                        [permissionField]: true
+                    }
+                }
+            },
+            {
+                [aclRulesRelationField]: {
+                    some: {
+                        wildcard: '*',
+                        [permissionField]: true
+                    }
+                }
+            }],
+        };
+        return where;
     }
 
     createACLRules(input: CreateACLRuleInput,
