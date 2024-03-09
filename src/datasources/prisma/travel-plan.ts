@@ -76,83 +76,50 @@ export class TravelPlanDataSource extends PrismaDataSource {
             }
         };
 
-        const bulk = acl.createACLRules(aclRules, 'travelPlan', 'travelPlanId', created.id);
-        await Promise.all(bulk.map(data => this.prisma.travelPlanACLRule.create({ data: data })));
+        await acl.addACLRules(this.prisma.travelPlanACLRule, aclRules, 'travelPlan', 'travelPlanId', created.id);
 
         webHook.invokeCreate(context, resourceName, 'create', created);
 
         return created;
     }
 
-    async addPublicPermission(id: number, permission: ACLPermission) {
-
-        await this.prisma.travelPlanACLRule.create({
-            data: {
-                wildcard: '*',
-                travelPlanId: id,
-                writePermission: permission.write,
-                readPermission: permission.read
-            }
-        });
-    }
-
-    async addUserPermission(id: number, userId: number, permission: ACLPermission) {
-
-        await this.prisma.travelPlanACLRule.create({
-            data: {
-                userId: userId,
-                travelPlanId: id,
-                writePermission: permission.write,
-                readPermission: permission.read
-            }
-        });
-    }
-
-    async addRolePermission(id: number, role: string | number, permission: ACLPermission) {
-        if (typeof role === 'string') {
-            await this.prisma.travelPlanACLRule.create({
-                data: {
-                    role: {
-                        connectOrCreate: {
-                            create: {
-                                name: role,
-                                description: `a role named ${role}`
-                            },
-                            where: {
-                                name: role
-                            }
-                        }
-                    },
-                    travelPlan: {
-                        connect: {
-                            id: id,
-                        }
-                    },
-                    writePermission: permission.write,
-                    readPermission: permission.read
-                }
-            });
-        }
-
-        else if (typeof role === 'number') {
-            await this.prisma.travelPlanACLRule.create({
-                data: {
-                    roleId: role,
-                    travelPlanId: id,
-                    writePermission: permission.write,
-                    readPermission: permission.read
-                }
-            });
-        }
-    }
-
     @injectUser()
     async deleteMany(context: ServerContext, filters: any) {
+        const { services: { webHook }, dataSources: { acl }, session: { user } } = context;
         try {
             const deletedRecords = await this.prisma.travelPlan.deleteMany({
-                where: filters,
+                where: {
+                    OR: [
+                        {
+                            ...filters,
+                            aclRules: {
+                                some: {
+                                    userId: parseInt(user.id),
+                                    writePermission: true
+                                }
+                            }
+                        },
+                        {
+                            ...filters,
+                            aclRules: {
+                                some: {
+                                    roleId: { in: user.extendedRoles.map(r => r.id) },
+                                    writePermission: true
+                                }
+                            }
+                        },
+                        {
+                            ...filters,
+                            aclRules: {
+                                some: {
+                                    wildcard: "*",
+                                    writePermission: true
+                                }
+                            }
+                        }
+                    ]
+                },
             });
-            const { services: { webHook } } = context;
             webHook.invokeCreate(context, 'travel-plan', 'delete-many', deletedRecords);
             return deletedRecords;
         } catch (error) {
@@ -160,14 +127,43 @@ export class TravelPlanDataSource extends PrismaDataSource {
         }
     }
 
-    async updateUnique(context: ServerContext, data) {
+    @injectUser()
+    async deleteUnique(context: ServerContext, filters: any) {
+        return await this.deleteMany(context, filters);
+    }
 
+    @injectUser()
+    async updateUnique(context: ServerContext, data) {
+        const { services: { webHook }, dataSources: { acl }, session: { user } } = context;
         try {
             const { id, ...toUpdate } = data;
 
             const updatedRecord = await this.prisma.travelPlan.update({
                 where: {
                     id: parseInt(id),
+                    OR: [{
+                        aclRules: {
+                            some: {
+                                userId: parseInt(user.id),
+                                writePermission: true
+                            }
+                        },
+                    }, {
+                        aclRules: {
+                            some: {
+                                roleId: { in: user.extendedRoles.map(r => r.id) },
+                                writePermission: true
+                            }
+                        }
+                    },
+                    {
+                        aclRules: {
+                            some: {
+                                wildcard: '*',
+                                writePermission: true
+                            }
+                        }
+                    }],
                 },
                 data: toUpdate,
             });
@@ -204,6 +200,15 @@ export class TravelPlanDataSource extends PrismaDataSource {
                                 readPermission: true
                             }
                         }
+                    },
+                    {
+                        ...filters,
+                        aclRules: {
+                            some: {
+                                wildcard: '*',
+                                readPermission: true
+                            }
+                        }
                     }
                 ]
             }
@@ -212,8 +217,9 @@ export class TravelPlanDataSource extends PrismaDataSource {
         return aclFiltered;
     }
 
+    @injectUser()
     async findUnique(context: ServerContext, filters: any) {
-        const item = await this.prisma.travelPlan.findUnique({ where: filters });
+        const [item] = await this.findMany(context, filters);
         return item;
     }
 }

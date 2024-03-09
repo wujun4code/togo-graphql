@@ -29,7 +29,7 @@ export const resolvers = {
             return context.dataSources.travelPlan.updateUnique(context, args.input);
         },
         deleteTravelPlan(parent, args, context, info) {
-            return context.dataSources.travelPlan.deleteMany(context, args.input);
+            return context.dataSources.travelPlan.deleteUnique(context, { id: parseInt(args.id) });
         },
     },
     TravelPlan: {

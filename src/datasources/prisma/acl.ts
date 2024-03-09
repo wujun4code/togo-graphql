@@ -23,6 +23,32 @@ export class ACLDataSource extends PrismaDataSource {
         super(config);
     }
 
+    async addPublicPermission(prismaACLTable: any, resourceIdField: string, id: number, permission: ACLPermission) {
+        const publicPermission = this.createPublicPermission(resourceIdField, id, permission);
+        await prismaACLTable.create({ data: publicPermission });
+    }
+
+    async addUserPermission(prismaACLTable: any, resourceIdField: string, id: number, userId: number, permission: ACLPermission) {
+        const userPermission = this.createUserPermission(resourceIdField, id, userId, permission);
+        await prismaACLTable.create({ data: userPermission });
+    }
+
+    async addRolePermission(prismaACLTable: any, role: string, resourceField: string,
+        resourceIdField: string,
+        id: number, permission: ACLPermission) {
+        const rolePermission = this.createRolePermission(role, resourceField, resourceIdField, id, permission);
+        await prismaACLTable.create({ data: rolePermission });
+    }
+
+    async addACLRules(prismaACLTable: any,
+        input: CreateACLRuleInput,
+        resourceField: string,
+        resourceIdField: string,
+        id: number) {
+        const bulk = this.createACLRules(input, resourceField, resourceIdField, id);
+        await Promise.all(bulk.map(data => prismaACLTable.create({ data: data })));
+    }
+
     createACLRules(input: CreateACLRuleInput,
         resourceField: string,
         resourceIdField: string,

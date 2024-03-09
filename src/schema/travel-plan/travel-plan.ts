@@ -36,14 +36,18 @@ input TravelPlanLocationInput {
 input UpdateTravelPlanInput {
   id: ID!
   content: String
-  published: Boolean!
+  published: Boolean
   origin: TravelPlanLocationInput
   destination: TravelPlanLocationInput
+}
+
+type DeletedResult {
+  count: Int!
 }
 
 type Mutation {
   createTravelPlan(input: CreateTravelPlanInput!): TravelPlan
   updateTravelPlan(input: UpdateTravelPlanInput!): TravelPlan
-  deleteTravelPlan(id: ID!): TravelPlan
+  deleteTravelPlan(id: ID!): DeletedResult
 }
 `
