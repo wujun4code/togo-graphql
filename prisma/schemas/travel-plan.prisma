@@ -1,0 +1,70 @@
+model TravelPlan {
+  id            Int           @id @default(autoincrement())
+  content       String?
+  published     Boolean       @default(false)
+  creatorId     Int
+  creator       User          @relation(fields: [creatorId], references: [id])
+  originId      Int
+  origin        LocationPoint @relation("OriginLocationPoint", fields: [originId], references: [id])
+  destinationId Int
+  destination   LocationPoint @relation("DestinationLocationPoint", fields: [destinationId], references: [id])
+
+  aclRules TravelPlanACLRule[]
+
+  aclUserRules TravelPlanUserACLRule[]
+}
+
+model LocationPoint {
+  id             Int          @id @default(autoincrement())
+  lat            Float
+  lon            Float
+  onOrigins      TravelPlan[] @relation("OriginLocationPoint")
+  onDestinations TravelPlan[] @relation("DestinationLocationPoint")
+
+  @@unique([lat, lon], name: "unique_lat_lon_constraint")
+}
+
+model TravelPlanUserACLRule {
+  id       Int     @id @default(autoincrement())
+  userId Int
+
+  user User? @relation(fields: [userId], references: [id])
+
+  readPermission  Boolean
+  writePermission Boolean
+
+  travelPlanId Int
+  travelPlan   TravelPlan @relation(fields: [travelPlanId], references: [id])
+  @@unique([userId, travelPlanId], name: "unique_user_travelPlan_constraint")
+}
+
+model TravelPlanRoleACLRule {
+  id       Int     @id @default(autoincrement())
+  roleId Int
+
+  role Role  @relation(fields: [roleId], references: [id])
+
+  readPermission  Boolean
+  writePermission Boolean
+
+  travelPlanId Int
+  travelPlan   TravelPlan @relation(fields: [travelPlanId], references: [id])
+  @@unique([roleId, travelPlanId], name: "unique_role_travelPlan_constraint")
+}
+
+model TravelPlanACLRule {
+  id       Int     @id @default(autoincrement())
+  wildcard String?
+
+  roleId Int?
+  userId Int?
+
+  role Role? @relation(fields: [roleId], references: [id])
+  user User? @relation(fields: [userId], references: [id])
+
+  readPermission  Boolean
+  writePermission Boolean
+
+  travelPlanId Int?
+  travelPlan   TravelPlan? @relation(fields: [travelPlanId], references: [id])
+}

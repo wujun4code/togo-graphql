@@ -12,7 +12,6 @@ model Role {
   name              String              @unique
   description       String
   users             RoleUser[]
-  aclRules          ACLRule[]
   TravelPlanACLRule TravelPlanACLRule[]
 }
 
@@ -24,7 +23,6 @@ model User {
   posts             Post[]
   travelPlans       TravelPlan[]
   roles             RoleUser[]
-  ACLRule           ACLRule[]
   TravelPlanACLRule TravelPlanACLRule[]
 }
 
@@ -38,30 +36,18 @@ model RoleUser {
   @@index([roleId, userId], name: "unique_user_role")
 }
 
-model Resource {
-  id         Int          @id @default(autoincrement())
-  name       String       @unique
-  aclRules   ACLRule[]
-  TravelPlan TravelPlan[]
-}
+model TravelPlan {
+  id            Int           @id @default(autoincrement())
+  content       String?
+  published     Boolean       @default(false)
+  creatorId     Int
+  creator       User          @relation(fields: [creatorId], references: [id])
+  originId      Int
+  origin        LocationPoint @relation("OriginLocationPoint", fields: [originId], references: [id])
+  destinationId Int
+  destination   LocationPoint @relation("DestinationLocationPoint", fields: [destinationId], references: [id])
 
-model ACLRule {
-  id       Int     @id @default(autoincrement())
-  wildcard String?
-
-  roleId     Int?
-  resourceId Int?
-
-  userId         Int?
-  resourceItemId Int?
-
-  readPermission  Boolean
-  writePermission Boolean
-
-  role     Role?     @relation(fields: [roleId], references: [id])
-  resource Resource? @relation(fields: [resourceId], references: [id])
-
-  user User? @relation(fields: [userId], references: [id])
+  aclRules TravelPlanACLRule[]
 }
 
 model TravelPlanACLRule {
@@ -79,23 +65,6 @@ model TravelPlanACLRule {
 
   travelPlanId Int?
   travelPlan   TravelPlan? @relation(fields: [travelPlanId], references: [id])
-}
-
-model TravelPlan {
-  id            Int           @id @default(autoincrement())
-  content       String?
-  published     Boolean       @default(false)
-  creatorId     Int
-  creator       User          @relation(fields: [creatorId], references: [id])
-  originId      Int
-  origin        LocationPoint @relation("OriginLocationPoint", fields: [originId], references: [id])
-  destinationId Int
-  destination   LocationPoint @relation("DestinationLocationPoint", fields: [destinationId], references: [id])
-
-  resourceId Int?
-  resource   Resource? @relation(fields: [resourceId], references: [id])
-
-  aclRules TravelPlanACLRule[]
 }
 
 model LocationPoint {
