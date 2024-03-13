@@ -8,6 +8,9 @@ export const resolvers = {
         getLocation: async (parent, args, context, info) => {
             return context.dataSources.location.getLocation(context, args.locationId, args.lang);
         },
+        topCities: async (parent, args, context, info) => {
+            return context.dataSources.location.topCities(context, args.range, args.lang, args.limit);
+        },
     },
     Location: {
         now(parent, args, context, info) {

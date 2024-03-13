@@ -9,9 +9,11 @@ model TravelPlan {
   destinationId Int
   destination   LocationPoint @relation("DestinationLocationPoint", fields: [destinationId], references: [id])
 
-  aclRules TravelPlanACLRule[]
+  aclUserRules TravelPlan_UserACLRule[]
 
-  aclUserRules TravelPlanUserACLRule[]
+  aclRolesRules TravelPlan_RoleACLRule[]
+
+  aclPublicRules TravelPlan_PublicACLRule[]
 }
 
 model LocationPoint {
@@ -24,21 +26,21 @@ model LocationPoint {
   @@unique([lat, lon], name: "unique_lat_lon_constraint")
 }
 
-model TravelPlanUserACLRule {
+model TravelPlan_UserACLRule {
   id       Int     @id @default(autoincrement())
   userId Int
 
-  user User? @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
   readPermission  Boolean
   writePermission Boolean
 
   travelPlanId Int
-  travelPlan   TravelPlan @relation(fields: [travelPlanId], references: [id])
+  travelPlan   TravelPlan @relation(fields: [travelPlanId], references: [id], onDelete: Cascade)
   @@unique([userId, travelPlanId], name: "unique_user_travelPlan_constraint")
 }
 
-model TravelPlanRoleACLRule {
+model TravelPlan_RoleACLRule {
   id       Int     @id @default(autoincrement())
   roleId Int
 
@@ -48,23 +50,18 @@ model TravelPlanRoleACLRule {
   writePermission Boolean
 
   travelPlanId Int
-  travelPlan   TravelPlan @relation(fields: [travelPlanId], references: [id])
+  travelPlan   TravelPlan @relation(fields: [travelPlanId], references: [id], onDelete: Cascade)
   @@unique([roleId, travelPlanId], name: "unique_role_travelPlan_constraint")
 }
 
-model TravelPlanACLRule {
+model TravelPlan_PublicACLRule {
   id       Int     @id @default(autoincrement())
-  wildcard String?
-
-  roleId Int?
-  userId Int?
-
-  role Role? @relation(fields: [roleId], references: [id])
-  user User? @relation(fields: [userId], references: [id])
+  wildcard String
 
   readPermission  Boolean
   writePermission Boolean
 
-  travelPlanId Int?
-  travelPlan   TravelPlan? @relation(fields: [travelPlanId], references: [id])
+  travelPlanId Int
+  travelPlan   TravelPlan @relation(fields: [travelPlanId], references: [id], onDelete: Cascade)
+  @@unique([wildcard, travelPlanId], name: "unique_wildcard_travelPlan_constraint")
 }

@@ -6,5 +6,12 @@ import { resolvers as AirNow } from './air/now.js';
 import { resolvers as TravelPlan } from './travel-plan/travel-plan.js';
 import { resolvers as Webhook } from './webhook/webhook.js';
 import { jsonScalar } from './json/json-scalar.js';
+import { resolvers as Post } from './post/post.js';
 
-export const resolvers = [Location, Now, Hourly, Daily, AirNow, TravelPlan, Webhook, { JSON: jsonScalar }];
+export const resolvers = [
+    Location, Now,
+    Hourly, Daily, AirNow,
+    TravelPlan, Webhook,
+    { JSON: jsonScalar },
+    Post
+];

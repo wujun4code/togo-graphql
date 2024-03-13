@@ -1,8 +1,49 @@
 model Post {
   id        Int     @id @default(autoincrement())
-  title     String
-  content   String?
+  content   String
   published Boolean @default(false)
   authorId  Int
   author    User    @relation(fields: [authorId], references: [id])
+  postedAt  DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+}
+
+model Post_UserACLRule {
+  id       Int     @id @default(autoincrement())
+  userId Int
+
+  user User @relation(fields: [userId], references: [id])
+
+  readPermission  Boolean
+  writePermission Boolean
+
+  postId Int
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  @@unique([userId, postId], name: "unique_user_post_constraint")
+}
+
+model Post_RoleACLRule {
+  id       Int     @id @default(autoincrement())
+  roleId Int
+
+  role Role  @relation(fields: [roleId], references: [id])
+
+  readPermission  Boolean
+  writePermission Boolean
+
+  postId Int
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  @@unique([roleId, postId], name: "unique_role_post_constraint")
+}
+
+model Post_PublicACLRule {
+  id       Int     @id @default(autoincrement())
+  wildcard String
+
+  readPermission  Boolean
+  writePermission Boolean
+
+  postId Int
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  @@unique([wildcard, postId], name: "unique_wildcard_post_constraint")
 }

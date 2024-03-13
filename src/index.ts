@@ -6,7 +6,7 @@ import {
     LocationDataSource, WeatherDataSource, AirDataSource,
     IRESTDataSourceConfig, OpenWeatherMap, PrismaDataSource,
     TravelPlanDataSource, WebHookDataSource, LocationPointDataSource,
-    ACLDataSource
+    ACLDataSource, PostDataSource, UserDataSource, FollowDataSource
 } from './datasources/index.js';
 import responseCachePlugin from '@apollo/server-plugin-response-cache';
 import { DataSourceConfig } from '@apollo/datasource-rest';
@@ -27,7 +27,18 @@ const PORT = process.env.PORT || 4000;
 
 const app = express();
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+    log: [
+        {
+            emit: "event",
+            level: "query",
+        }
+    ]
+});
+
+prisma.$on("query", async (e) => {
+    console.log(`${e.query} ${e.params}`)
+});
 
 async function main() {
 
@@ -58,13 +69,14 @@ const extractToken = (req: CustomRequest, res: Response) => {
     let token: string | null = null;
 
     const forwardedTokenKey = 'x-forwarded-access-token';
-    token = req.headers[forwardedTokenKey].toString();
-    if (token) return token;
+    if (req.headers[forwardedTokenKey]) {
+        token = req.headers[forwardedTokenKey].toString();
+        if (token) return token;
+    }
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.toLowerCase().startsWith('bearer ')) {
         token = authHeader.slice(7);
     }
-
     return token;
 }
 
@@ -110,7 +122,7 @@ app.use(
             };
 
             const http = { req, res };
-            
+
             //console.log(`user: ${user.name}:${JSON.stringify(user.roles)}`);
             const session = { user: user, http: http };
 
@@ -134,7 +146,10 @@ app.use(
                     travelPlan: new TravelPlanDataSource(prismaConfig),
                     webHook: webHookDataSource,
                     locationPoint: new LocationPointDataSource(prismaConfig),
-                    acl: new ACLDataSource(prismaConfig)
+                    acl: new ACLDataSource(prismaConfig),
+                    post: new PostDataSource(prismaConfig),
+                    user: new UserDataSource(prismaConfig),
+                    follow: new FollowDataSource(prismaConfig),
                 },
                 services: { acl, webHook: webHookService }
             };

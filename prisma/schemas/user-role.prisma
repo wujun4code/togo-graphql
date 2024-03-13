@@ -1,21 +1,25 @@
 
+model User {
+  id                Int                 @id @default(autoincrement())
+  email             String              @unique
+  username          String              @unique
+  friendlyName      String?
+  sub               String              @unique 
+  snsName           String              @unique @default(cuid())
+
+  posts             Post[]
+  travelPlans       TravelPlan[]
+  roles             RoleUser[]
+
+  followers         Follow[] @relation(name: "Followers")
+  followees         Follow[] @relation(name: "Followees")
+}
+
 model Role {
   id                Int                 @id @default(autoincrement())
   name              String              @unique
   description       String
   users             RoleUser[]
-  TravelPlanACLRule TravelPlanACLRule[]
-}
-
-model User {
-  id                Int                 @id @default(autoincrement())
-  email             String              @unique
-  name              String?
-  sub               String              @unique
-  posts             Post[]
-  travelPlans       TravelPlan[]
-  roles             RoleUser[]
-  TravelPlanACLRule TravelPlanACLRule[]
 }
 
 model RoleUser {

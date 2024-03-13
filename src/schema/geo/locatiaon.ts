@@ -27,5 +27,6 @@ export const typeDefs = `#graphql
   type Query {
     searchLocations(location: String!, lang: String! = "zh-hans"): [Location!]!
     getLocation(locationId: String!, lang: String! = "zh-hans"): [Location!]!
+    topCities(range: String = "cn", lang: String! = "zh-hans", limit: Int = 10): [Location!]!
   }
 `

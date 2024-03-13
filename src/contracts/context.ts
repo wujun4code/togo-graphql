@@ -2,7 +2,8 @@ import {
     LocationDataSource, WeatherDataSource,
     AirDataSource, OpenWeatherMap,
     PrismaDataSource, TravelPlanDataSource,
-    WebHookDataSource, LocationPointDataSource, ACLDataSource
+    WebHookDataSource, LocationPointDataSource, ACLDataSource,
+    PostDataSource, UserDataSource, FollowDataSource
 } from '../datasources/index.js';
 
 import { WebHookService } from '../services/index.js';
@@ -11,10 +12,11 @@ import { ACL } from '../decorators/index.js';
 export interface OAuth2UserInterface {
     id: string;
     sub: string;
-    name: string;
+    username: string;
     roles: string[];
     permissions: string[];
     email: string;
+    friendlyName: string;
     hasRole: (roleName: string) => boolean;
     hasPermission: (permission: string) => boolean;
 }
@@ -52,7 +54,8 @@ export class KeycloakAccessTokenUser implements OAuth2UserInterface {
     id: string;
     sub: string;
     email: string;
-    name: string;
+    username: string;
+    friendlyName: string;
     roles: string[];
     permissions: string[];
 
@@ -61,7 +64,8 @@ export class KeycloakAccessTokenUser implements OAuth2UserInterface {
         this.content = accessTokenContent;
         this.sub = this.content.sub;
         this.email = this.content.email;
-        this.name = this.content.name;
+        this.username = this.content.preferred_username;
+        this.friendlyName = this.content.name;
         this.roles = this.content.resource_access[resource]['roles'];
         this.permissions = this.content.resource_access[resource]['roles'];
     }
@@ -100,7 +104,10 @@ export interface IDataSources {
     travelPlan: TravelPlanDataSource;
     webHook: WebHookDataSource;
     locationPoint: LocationPointDataSource;
-    acl: ACLDataSource
+    acl: ACLDataSource;
+    post: PostDataSource;
+    user: UserDataSource;
+    follow: FollowDataSource;
 }
 
 export interface ServerContext {

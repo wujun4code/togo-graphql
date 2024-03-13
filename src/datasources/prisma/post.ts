@@ -15,55 +15,68 @@ const defaultACLRule = {
     },
 };
 
-export class TravelPlanDataSource extends PrismaDataSource {
+export class PostDataSource extends PrismaDataSource {
     constructor(config: { client: PrismaClient, session: SessionContext }) {
         super(config);
     }
 
     @injectUser()
+    async getTimeline(context: ServerContext, input: any) {
+        const currentUserId = parseInt(context.session.user.id);
+
+        const limit = input.limit ? input.limit : 10;
+        const skip = input.skip ? input.skip : 0;
+        const sorter = input.sorted;
+        const filters = input.filters ? input.filters : {};
+        // SELECT "Post".*
+        // FROM "Follow" JOIN "User" ON "Follow"."followeeId" = "User"."id" 
+        // JOIN "Post" ON "User"."id" = "Post"."authorId"
+        // WHERE "Follow"."followerId" = 2
+        const timelinePosts = await this.prisma.post.findMany({
+            where: {
+                OR: [
+                    {
+                        ...filters,
+                        authorId: currentUserId,
+                    },
+                    {
+                        ...filters,
+                        author: {
+                            followees: {
+                                some: {
+                                    followerId: currentUserId
+                                }
+                            },
+                        },
+                    },
+                ],
+            },
+            orderBy: sorter ? sorter : {
+                postedAt: 'desc',
+            },
+            take: limit,
+            skip: skip,
+        });
+
+        return timelinePosts;
+    }
+
+    @injectUser()
     async create(context: ServerContext, input: any) {
-        const created = await this.prisma.travelPlan.create({
+        const created = await this.prisma.post.create({
             data: {
-                creator: {
+                author: {
                     connect: {
                         id: parseInt(context.session.user.id),
                     }
                 },
                 content: input.content,
-                published: input.published,
-                origin: {
-                    connectOrCreate: {
-                        create: {
-                            lat: input.origin.lat,
-                            lon: input.origin.lon,
-                        },
-                        where: {
-                            unique_lat_lon_constraint: {
-                                lat: input.origin.lat,
-                                lon: input.origin.lon,
-                            }
-                        }
-                    }
-                },
-                destination: {
-                    connectOrCreate: {
-                        create: {
-                            lat: input.destination.lat,
-                            lon: input.destination.lon,
-                        },
-                        where: {
-                            unique_lat_lon_constraint: {
-                                lat: input.destination.lat,
-                                lon: input.destination.lon,
-                            }
-                        }
-                    }
-                },
+                published: input.published ? input.published : true,
             }
         });
         const { services: { webHook }, dataSources: { acl }, session: { user } } = context;
 
-        const resourceName = 'travel-plan';
+        const resourceName = 'post';
 
         const aclRules = {
             ...defaultACLRule,
@@ -73,26 +86,24 @@ export class TravelPlanDataSource extends PrismaDataSource {
             }
         };
 
-        //await acl.addACLRules(this.prisma.travelPlanACLRule, aclRules, 'travelPlan', 'travelPlanId', created.id);
-
         await acl.addACLRulesX(aclRules, {
             wildcard: {
-                publicACLRuleTable: this.prisma.travelPlan_PublicACLRule,
+                publicACLRuleTable: this.prisma.post_PublicACLRule,
                 wildcardField: 'wildcard',
                 wildcardFieldValue: "*",
-                resourceIdField: 'travelPlanId',
+                resourceIdField: 'postId',
                 resourceId: created.id
             },
             userInput: {
-                userACLRuleTable: this.prisma.travelPlan_UserACLRule,
-                resourceIdField: 'travelPlanId',
+                userACLRuleTable: this.prisma.post_UserACLRule,
+                resourceIdField: 'postId',
                 resourceId: created.id,
                 userIdField: 'userId',
             },
             roleInput: {
-                roleACLRuleTable: this.prisma.travelPlan_RoleACLRule,
-                resourceField: 'travelPlan',
-                resourceIdField: 'travelPlanId',
+                roleACLRuleTable: this.prisma.post_RoleACLRule,
+                resourceField: 'post',
+                resourceIdField: 'postId',
                 resourceId: created.id,
                 roleIdField: 'roleId',
             }
@@ -122,10 +133,10 @@ export class TravelPlanDataSource extends PrismaDataSource {
                     roleIdField: "roleId",
                 }
             });
-            const deletedRecords = await this.prisma.travelPlan.deleteMany({
+            const deletedRecords = await this.prisma.post.deleteMany({
                 where: aclWhere,
             });
-            webHook.invokeCreate(context, 'travel-plan', 'delete-many', deletedRecords);
+            webHook.invokeCreate(context, 'post', 'delete-many', deletedRecords);
             return deletedRecords;
         } catch (error) {
             console.error(`Error deleting records: ${error.message}`);
@@ -157,11 +168,11 @@ export class TravelPlanDataSource extends PrismaDataSource {
                     roleIdField: "roleId",
                 }
             });
-            const updatedRecord = await this.prisma.travelPlan.update({
+            const updatedRecord = await this.prisma.post.update({
                 where: aclWhere,
                 data: toUpdate,
             });
-            webHook.invokeCreate(context, 'travel-plan', 'update-unique', updatedRecord);
+            webHook.invokeCreate(context, 'post', 'update-unique', updatedRecord);
             return updatedRecord;
         }
         catch (error) {
@@ -187,7 +198,7 @@ export class TravelPlanDataSource extends PrismaDataSource {
                 roleIdField: "roleId",
             }
         });
-        const aclFiltered = await this.prisma.travelPlan.findMany({ where: aclWhere });
+        const aclFiltered = await this.prisma.post.findMany({ where: aclWhere });
         return aclFiltered;
     }
 
