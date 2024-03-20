@@ -22,7 +22,7 @@ import cors from 'cors';
 import express, { Request, Response, NextFunction } from 'express';
 import 'dotenv/config'
 import { PrismaClient } from '@prisma/client';
-
+import { isbot } from "isbot";
 const PORT = process.env.PORT || 4000;
 
 const app = express();
@@ -63,32 +63,31 @@ const server = new ApolloServer<ServerContext>({
 
 interface CustomRequest extends Request {
     accessToken?: string;
+    provider?: string;
 }
 
 const extractToken = (req: CustomRequest, res: Response) => {
-    let token: string | null = null;
+    let accessToken: string | null = null;
+    let provider: string = null;
+    let clientId: string = null;
+    const tokenProviderKey = 'x-oauth2-token-provider';
+    const clientIdKey = 'x-oauth2-client-id';
 
-    const forwardedTokenKey = 'x-forwarded-access-token';
-    if (req.headers[forwardedTokenKey]) {
-        token = req.headers[forwardedTokenKey].toString();
-        if (token) return token;
-    }
     const authHeader = req.headers.authorization;
+
     if (authHeader && authHeader.toLowerCase().startsWith('bearer ')) {
-        token = authHeader.slice(7);
+        accessToken = authHeader.slice(7);
+        provider = req.headers[tokenProviderKey].toString() || "keycloak";
+        clientId = req.headers[clientIdKey].toString();
     }
-    return token;
+    return { accessToken, provider, clientId };
 }
 
-const extractTokenMiddleware = () => {
-
+const blockBot = () => {
     return (req: CustomRequest, res: Response, next: NextFunction) => {
-        const token = extractToken(req, res);
-        if (!token) {
-            return res.status(401).json({ error: 'Unauthorized' });
+        if (isbot(req.get("user-agent"))) {
+            return res.status(403).json({ error: 'Access denied for bots and crawlers' });
         }
-        req.accessToken = token;
-
         next();
     }
 };
@@ -99,10 +98,33 @@ function parseJwt(token) {
     return JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
 }
 
+function extractUser({ accessToken, provider, clientId }: { accessToken: string, provider: string, clientId: string }) {
+    if (accessToken) {
+
+        switch (provider) {
+            case 'keycloak':
+                {
+                    const keycloakAccessToken = parseJwt(accessToken as string);
+
+                    const oauth2User = new KeycloakAccessTokenUser(clientId, keycloakAccessToken);
+
+                    console.log(`oauth2User:${JSON.stringify(oauth2User)}`);
+                    const user: ExtendedUserInterface = {
+                        ...oauth2User,
+                        extendedRoles: []
+                    };
+
+                    return user;
+                }
+        }
+    }
+    return null;
+}
 app.use(
     '/',
     cors<cors.CorsRequest>(),
     express.json(),
+    //blockBot(),
     //extractTokenMiddleware(),
     // expressMiddleware accepts the same arguments:
     // an Apollo Server instance and optional configuration options
@@ -112,14 +134,7 @@ app.use(
 
             const accessToken = extractToken(req, res);
 
-            const keycloakAccessToken = parseJwt(accessToken as string);
-
-            const oauth2User = new KeycloakAccessTokenUser(process.env.KEYCLOAK_RESOURCE, keycloakAccessToken);
-
-            const user: ExtendedUserInterface = {
-                ...oauth2User,
-                extendedRoles: []
-            };
+            const user = extractUser(accessToken);
 
             const http = { req, res };
 

@@ -4,7 +4,7 @@ model User {
   email             String              @unique
   username          String              @unique
   friendlyName      String?
-  sub               String              @unique 
+  sub               String              @unique
   snsName           String              @unique @default(cuid())
 
   posts             Post[]
@@ -13,6 +13,31 @@ model User {
 
   followers         Follow[] @relation(name: "Followers")
   followees         Follow[] @relation(name: "Followees")
+
+  oauth2            User_OAuth2[] @relation(name: "OAuth2_Binding")
+}
+
+model OAuth2 {
+  id                Int                 @id @default(autoincrement())
+  
+  provider          String              
+  clientId          String              
+
+  oauth2            User_OAuth2[]       @relation(name: "OAuth2_Providers")
+
+  @@index([provider, clientId], name: "provider_clientId")      
+}
+
+model User_OAuth2 {
+  id                Int                 @id @default(autoincrement())
+
+  oauth2Id          Int
+  oauth2            OAuth2              @relation(name: "OAuth2_Providers", fields: [oauth2Id], references: [id])
+
+  userId            Int
+  user              User                @relation(name: "OAuth2_Binding", fields: [userId], references: [id])
+
+  openId            String
 }
 
 model Role {

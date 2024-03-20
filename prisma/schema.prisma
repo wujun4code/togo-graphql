@@ -189,6 +189,28 @@ model User {
   followees              Follow[]                 @relation(name: "Followees")
   Post_UserACLRule       Post_UserACLRule[]
   TravelPlan_UserACLRule TravelPlan_UserACLRule[]
+  User_OAuth2            User_OAuth2[]
+}
+
+model OAuth2 {
+  id          Int           @id @default(autoincrement())
+  provider    String
+  clientId    String
+  User_OAuth2 User_OAuth2[]
+
+  @@index([provider, clientId], name: "provider_clientId")
+}
+
+model User_OAuth2 {
+  id Int @id @default(autoincrement())
+
+  oauth2Id Int
+  oauth2   OAuth2 @relation(fields: [oauth2Id], references: [id])
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  openId String
 }
 
 model Role {

@@ -7,6 +7,13 @@ export const typeDefs = `#graphql
     authorInfo: UserPublicInfo!
   }
 
+  type SharedPublicPost {
+    id: ID!
+    content: String!
+    postedAt: String!    
+    authorInfo: SharedPublicProfileInfo!
+  }
+
   input CreatePostInput {
     content: String!
     published: Boolean
@@ -37,6 +44,7 @@ export const typeDefs = `#graphql
 
   type Query {
     timeline(input: BaseQueryInput): [Post!]
+    trendingFeed(input: BaseQueryInput): [SharedPublicPost!]
     followers: [UserPublicInfo!]
   }
 

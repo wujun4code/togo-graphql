@@ -20,10 +20,31 @@ export class PostDataSource extends PrismaDataSource {
         super(config);
     }
 
+    async getTrendingFeed(context: ServerContext, input: any) {
+        if (!input) input = {};
+        const limit = input.limit ? input.limit : 10;
+        const skip = input.skip ? input.skip : 0;
+        const sorter = input.sorted;
+        const filters = input.filters ? input.filters : {};
+
+        const trendingFeedPosts = await this.prisma.post.findMany({
+            where: {
+                ...filters,
+            },
+            orderBy: sorter ? sorter : {
+                postedAt: 'desc',
+            },
+            take: limit,
+            skip: skip,
+        });
+
+        return trendingFeedPosts;
+    }
+
     @injectUser()
     async getTimeline(context: ServerContext, input: any) {
         const currentUserId = parseInt(context.session.user.id);
-
+        if (!input) input = {};
         const limit = input.limit ? input.limit : 10;
         const skip = input.skip ? input.skip : 0;
         const sorter = input.sorted;

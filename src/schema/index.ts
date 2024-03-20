@@ -8,6 +8,7 @@ import { typeDefs as Webhook } from './webhook/webhook.js';
 import { typeDefs as JSONScalerTypeDefs } from './json/json-scalar.js';
 import { typeDefs as Post } from './post/post.js';
 import { typeDefs as UserShared } from './user/user.shared.js';
+import { typeDefs as User } from './user/user.js';
 
 export const cacheDefs = `#graphql
 enum CacheControlScope {
@@ -26,4 +27,4 @@ export const typeDefs = [
   cacheDefs, JSONScalerTypeDefs, Location,
   Now, Hourly, Daily,
   AirNow, TravelPlan,
-  Webhook, Post, UserShared];
+  Webhook, Post, UserShared, User];

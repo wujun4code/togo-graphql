@@ -12,7 +12,7 @@ export async function ensureUserInitialized(context) {
     } = context;
 
     const createOrGetUser = await prisma.prisma.user.upsert({
-        where: { sub: user.sub },
+        where: { email: user.email },
         update: {
         },
         create: {

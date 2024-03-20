@@ -81,7 +81,7 @@ export class KeycloakAccessTokenUser implements OAuth2UserInterface {
 }
 
 export interface SessionContext {
-    user: ExtendedUserInterface,
+    user?: ExtendedUserInterface,
     http: HttpContext;
 }
 
