@@ -4,7 +4,7 @@ model User {
   email             String              @unique
   username          String              @unique
   friendlyName      String?
-  sub               String              @unique
+  
   snsName           String              @unique @default(cuid())
 
   posts             Post[]
@@ -14,7 +14,10 @@ model User {
   followers         Follow[] @relation(name: "Followers")
   followees         Follow[] @relation(name: "Followees")
 
-  oauth2            User_OAuth2[] @relation(name: "OAuth2_Binding")
+  oauth2Bindings    User_OAuth2[] @relation(name: "OAuth2_Binding")
+
+  createdAt         DateTime @unique() @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime @unique() @default(now()) @updatedAt @db.Timestamptz(3)
 }
 
 model OAuth2 {
@@ -23,9 +26,9 @@ model OAuth2 {
   provider          String              
   clientId          String              
 
-  oauth2            User_OAuth2[]       @relation(name: "OAuth2_Providers")
+  authUsers            User_OAuth2[]       @relation(name: "OAuth2_Providers")
 
-  @@index([provider, clientId], name: "provider_clientId")      
+  @@unique([provider, clientId], name: "unique_provider_clientId")
 }
 
 model User_OAuth2 {
@@ -38,6 +41,11 @@ model User_OAuth2 {
   user              User                @relation(name: "OAuth2_Binding", fields: [userId], references: [id])
 
   openId            String
+
+  createdAt         DateTime @unique() @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime @unique() @default(now()) @updatedAt @db.Timestamptz(3)
+
+  @@unique([oauth2Id, userId, openId], name: "unique_provider_userId_clientId")
 }
 
 model Role {
@@ -53,6 +61,9 @@ model RoleUser {
   userId Int
   user   User @relation(fields: [userId], references: [id])
   role   Role @relation(fields: [roleId], references: [id])
+  
+  createdAt         DateTime @unique() @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime @unique() @default(now()) @updatedAt @db.Timestamptz(3)
 
   @@index([roleId, userId], name: "unique_user_role")
 }

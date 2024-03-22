@@ -10,6 +10,9 @@ import { WebHookService } from '../services/index.js';
 import { ACL } from '../decorators/index.js';
 
 export interface OAuth2UserInterface {
+
+    provider: string;
+    clientId: string;
     id: string;
     sub: string;
     username: string;
@@ -51,6 +54,8 @@ export class KeycloakAccessTokenUser implements OAuth2UserInterface {
 
     content: KeycloakAccessTokenContent;
 
+    provider: string;
+    clientId: string;
     id: string;
     sub: string;
     email: string;
@@ -66,6 +71,8 @@ export class KeycloakAccessTokenUser implements OAuth2UserInterface {
         this.email = this.content.email;
         this.username = this.content.preferred_username;
         this.friendlyName = this.content.name;
+        this.provider = 'keycloak';
+        this.clientId = resource;
         this.roles = this.content.resource_access[resource]['roles'];
         this.permissions = this.content.resource_access[resource]['roles'];
     }

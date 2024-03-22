@@ -4,8 +4,8 @@ model Post {
   published Boolean @default(false)
   authorId  Int
   author    User    @relation(fields: [authorId], references: [id])
-  postedAt  DateTime @default(now()) @db.Timestamptz(3)
-  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  postedAt  DateTime @unique() @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @unique() @updatedAt @db.Timestamptz(3)
 }
 
 model Post_UserACLRule {

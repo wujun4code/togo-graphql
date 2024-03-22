@@ -18,7 +18,7 @@ export const resolvers = {
 
         }),
         follow: withAuthentication(async (parent, args, context, info) => {
-            if (!args.input.openId && !args.input.snsName)
+            if (!args.input.snsName)
                 throw new GraphQLError(`no user found`, {
                     extensions: {
                         code: 'Bad Request',

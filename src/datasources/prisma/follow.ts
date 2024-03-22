@@ -12,19 +12,13 @@ export class FollowDataSource extends PrismaDataSource {
     @injectUser()
     async create(context: ServerContext, input: any) {
 
-        const subQuery = {
-            where: {
-                sub: input.openId,
-            },
-        };
         const snsNameQuery = {
             where: {
                 snsName: input.snsName,
             },
         };
 
-        const followee = input.openId ? await this.prisma.user.findUnique(subQuery) : await this.prisma.user.findUnique(snsNameQuery);
-
+        const followee = await this.prisma.user.findUnique(snsNameQuery);
 
         const currentUserId = parseInt(context.session.user.id);
 
@@ -56,7 +50,7 @@ export class FollowDataSource extends PrismaDataSource {
         order by "followedAt") as follower_rank, 
         COUNT(*) over (partition by "followerId") as total_following
         from "Follow" 
-        where "followerId" = ${currentUserId} and "followeeId" = ${followee.id}       
+        where "followerId" = ${currentUserId} and "followeeId" = ${followee.id} 
         `
 
         const followerRank = followInfo[0]?.follower_rank || 0;

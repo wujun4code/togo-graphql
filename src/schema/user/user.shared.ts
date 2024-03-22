@@ -1,13 +1,11 @@
 export const typeDefs = `#graphql
 
   interface SharedPublicProfile {
-    openId: ID!
     snsName: String!
     friendlyName: String
   }
 
   type UserPublicInfo implements SharedPublicProfile {
-    openId: ID!
     snsName: String!
     friendlyName: String
     following: UserPublicInfoFollowing!
@@ -29,12 +27,10 @@ export const typeDefs = `#graphql
   }
 
   input SharedPublicProfileInput {
-    openId: String
     snsName: String
   }
 
   type SharedPublicProfileInfo implements SharedPublicProfile {
-    openId: ID!
     snsName: String!
     friendlyName: String
     following: UserPublicInfoFollowing!
@@ -42,7 +38,7 @@ export const typeDefs = `#graphql
   }
 
   type Query {
-    profile(input: SharedPublicProfileInput!): SharedPublicProfileInfo
+    publicProfile(input: SharedPublicProfileInput!): SharedPublicProfileInfo
   }
 
 `

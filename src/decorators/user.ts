@@ -16,7 +16,6 @@ export async function ensureUserInitialized(context) {
         update: {
         },
         create: {
-            sub: user.sub,
             username: user.username,
             snsName: user.username,
             friendlyName: user.friendlyName,
@@ -31,6 +30,17 @@ export async function ensureUserInitialized(context) {
                     }
                 })),
             },
+            oauth2Bindings: {
+                create: [user.sub].map((openId) => ({
+                    openId: openId,
+                    oauth2: {
+                        connectOrCreate: {
+                            where: { unique_provider_clientId: { provider: user.provider, clientId: user.clientId } },
+                            create: { provider: user.provider, clientId: user.clientId },
+                        }
+                    }
+                }))
+            }
         },
         select: {
             roles: {

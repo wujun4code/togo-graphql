@@ -30,7 +30,6 @@
     "fastq": "^1.17.1",
     "graphql": "^16.8.1",
     "isbot": "^5.1.1",
-    "prisma": "^5.10.2",
     "prisma-import": "^1.0.5"
   },
   "prisma": {
@@ -42,6 +41,7 @@
   "devDependencies": {
     "@types/node": "^20.11.19",
     "nodemon": "^3.1.0",
+    "prisma": "^5.11.0",
     "typescript": "^5.3.3"
   },
   "engines": {

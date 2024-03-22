@@ -1,13 +1,42 @@
 export const typeDefs = `#graphql
 
-  input GetMyProfileInput {
+  type OAuth2Provider {
     provider: String!
     clientId: String!
   }
 
-  type Query {
-    myProfile: SharedPublicProfileInfo
-    getMyProfile(input: GetMyProfileInput!): SharedPublicProfileInfo
+  type OAuth2Binding {
+    oauth2: OAuth2Provider
+    openId: String!
+    createdAt: String!
+    updatedAt: String!
   }
 
+  type OAuth2BindingEdge {
+    cursor: String!
+    node: OAuth2Binding!
+  }
+
+  type PageInfo {
+    hasNextPage: Boolean!
+    endCursor: String!
+  }
+
+  type UserOAuth2BindingConnection {
+    totalCount: Int!
+    edges: [OAuth2BindingEdge]!
+    pageInfo: PageInfo!
+  }
+
+  type PrivateProfileInfo implements SharedPublicProfile {
+    oauth2BindingsConnection(input: BaseQueryInput): UserOAuth2BindingConnection!
+    snsName: String!
+    friendlyName: String
+    following: UserPublicInfoFollowing!
+    follower: UserPublicInfoFollower!
+  }
+
+  type Query {
+    userProfile: PrivateProfileInfo
+  }
 `

@@ -44,8 +44,8 @@ model Post {
   published          Boolean              @default(false)
   authorId           Int
   author             User                 @relation(fields: [authorId], references: [id])
-  postedAt           DateTime             @default(now()) @db.Timestamptz(3)
-  updatedAt          DateTime             @updatedAt @db.Timestamptz(3)
+  postedAt           DateTime             @unique() @default(now()) @db.Timestamptz(3)
+  updatedAt          DateTime             @unique() @updatedAt @db.Timestamptz(3)
   Post_UserACLRule   Post_UserACLRule[]
   Post_RoleACLRule   Post_RoleACLRule[]
   Post_PublicACLRule Post_PublicACLRule[]
@@ -178,39 +178,50 @@ model User {
   email        String  @unique
   username     String  @unique
   friendlyName String?
-  sub          String  @unique
-  snsName      String  @unique @default(cuid())
+
+  snsName String @unique @default(cuid())
 
   posts       Post[]
   travelPlans TravelPlan[]
   roles       RoleUser[]
 
-  followers              Follow[]                 @relation(name: "Followers")
-  followees              Follow[]                 @relation(name: "Followees")
+  followers Follow[] @relation(name: "Followers")
+  followees Follow[] @relation(name: "Followees")
+
+  oauth2Bindings User_OAuth2[] @relation(name: "OAuth2_Binding")
+
+  createdAt              DateTime                 @unique() @default(now()) @db.Timestamptz(3)
+  updatedAt              DateTime                 @unique() @default(now()) @updatedAt @db.Timestamptz(3)
   Post_UserACLRule       Post_UserACLRule[]
   TravelPlan_UserACLRule TravelPlan_UserACLRule[]
-  User_OAuth2            User_OAuth2[]
 }
 
 model OAuth2 {
-  id          Int           @id @default(autoincrement())
-  provider    String
-  clientId    String
-  User_OAuth2 User_OAuth2[]
+  id Int @id @default(autoincrement())
 
-  @@index([provider, clientId], name: "provider_clientId")
+  provider String
+  clientId String
+
+  authUsers User_OAuth2[] @relation(name: "OAuth2_Providers")
+
+  @@unique([provider, clientId], name: "unique_provider_clientId")
 }
 
 model User_OAuth2 {
   id Int @id @default(autoincrement())
 
   oauth2Id Int
-  oauth2   OAuth2 @relation(fields: [oauth2Id], references: [id])
+  oauth2   OAuth2 @relation(name: "OAuth2_Providers", fields: [oauth2Id], references: [id])
 
   userId Int
-  user   User @relation(fields: [userId], references: [id])
+  user   User @relation(name: "OAuth2_Binding", fields: [userId], references: [id])
 
   openId String
+
+  createdAt DateTime @unique() @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @unique() @default(now()) @updatedAt @db.Timestamptz(3)
+
+  @@unique([oauth2Id, userId, openId], name: "unique_provider_userId_clientId")
 }
 
 model Role {
@@ -228,6 +239,9 @@ model RoleUser {
   userId Int
   user   User @relation(fields: [userId], references: [id])
   role   Role @relation(fields: [roleId], references: [id])
+
+  createdAt DateTime @unique() @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @unique() @default(now()) @updatedAt @db.Timestamptz(3)
 
   @@index([roleId, userId], name: "unique_user_role")
 }
