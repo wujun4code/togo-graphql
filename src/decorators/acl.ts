@@ -1,4 +1,4 @@
-import { ServiceContext, SessionContext, ServerContext } from '../contracts/index.js';
+import { ServiceContext, SessionContext, ServerContext, GraphqlErrorCode } from '../contracts/index.js';
 import { GraphQLError } from 'graphql';
 
 export interface FieldFilterAttribute {
@@ -241,7 +241,8 @@ export function hasPermission(permissions: string[]) {
             if (authorized == false) {
                 throw new GraphQLError(`no authorized permission for current user on current operation`, {
                     extensions: {
-                        code: 'Forbidden',
+                        code: GraphqlErrorCode.FORBIDDEN,
+                        name: GraphqlErrorCode[GraphqlErrorCode.FORBIDDEN],
                     },
                 });
             }
@@ -264,7 +265,8 @@ export function checkRole(context: ServerContext, roles: string[]) {
     if (authorized == false) {
         throw new GraphQLError(`no authorized role for current user`, {
             extensions: {
-                code: 'Forbidden',
+                code: GraphqlErrorCode.FORBIDDEN,
+                name: GraphqlErrorCode[GraphqlErrorCode.FORBIDDEN],
             },
         });
     }

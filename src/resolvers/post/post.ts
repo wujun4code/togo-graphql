@@ -1,36 +1,81 @@
-import { GraphQLError } from 'graphql';
-import { useAuthentication } from '../../decorators/index.js';
 import { withAuthentication } from '../../decorators/index.js';
+
 export const resolvers = {
     Query: {
         timeline: withAuthentication(async (parent, args, context, info) => {
-            return await context.dataSources.post.getTimeline(context, args.input);
+            return {};
         }),
         trendingFeed: async (parent, args, context, info) => {
-            return await context.dataSources.post.getTrendingFeed(context, args.input);
+            return {};
+        },
+        post: async (parent, args, context, info) => {
+            return await context.dataSources.post.getPost(context, { id: parseInt(args.id) });
         },
     },
     Mutation: {
         createPost: withAuthentication(async (parent, args, context, info) => {
-            return await useAuthentication.execute(async (parent, args, context, info) => {
-                return context.dataSources.post.create(context, args.input);
-            }, parent, args, context, info);
+            return await context.dataSources.post.create(context, args.input);
+        }),
+    },
+    Timeline: {
+        posts: withAuthentication(async (parent, args, context, info) => {
+            const list = await context.dataSources.post.getTimeline(context, args.input);
 
+            const connection = {
+                edges: list.map(n => {
+                    return { cursor: n.postedAt, node: n };
+                }),
+                pageInfo: {
+                    hasNextPage: false,
+                    endCursor: list.length > 0 ? list[list.length - 1].postedAt : ''
+                },
+                totalCount: 0,
+            };
+
+            return connection;
         }),
-        follow: withAuthentication(async (parent, args, context, info) => {
-            if (!args.input.snsName)
-                throw new GraphQLError(`no user found`, {
-                    extensions: {
-                        code: 'Bad Request',
-                    },
-                });
-            const result = await context.dataSources.follow.create(context, args.input);
-            return result;
-        }),
+    },
+    TrendingFeed: {
+        posts: async (parent, args, context, info) => {
+            const list = await context.dataSources.post.getTrendingFeed(context, args.input);
+
+            const connection = {
+                edges: list.map(n => {
+                    return { cursor: n.postedAt, node: n };
+                }),
+                pageInfo: {
+                    hasNextPage: false,
+                    endCursor: list.length > 0 ? list[list.length - 1].postedAt : ''
+                },
+                totalCount: 0,
+            };
+
+            return connection;
+        },
     },
     Post: {
         authorInfo: async (parent, args, context, info) => {
-            return await context.dataSources.user.getPublicInfo(context, parent.authorId);
+            if (context.session.user)
+                return await context.dataSources.user.getPublicInfo(context, parent.authorId);
+            else return await context.dataSources.user.getSharedPublicProfileByUserId(context, parent.authorId);
+        },
+
+        comments: async (parent, args, context, info) => {
+            const input = { ...args.input, postId: parent.id };
+            const list = await context.dataSources.post.findRootComments(context, input);
+
+            const connection = {
+                edges: list.map(n => {
+                    return { cursor: n.createdAt, node: n };
+                }),
+                pageInfo: {
+                    hasNextPage: false,
+                    endCursor: list.length > 0 ? list[list.length - 1].createdAt : ''
+                },
+                totalCount: 0,
+            };
+
+            return connection;
         },
     },
     SharedPublicPost: {

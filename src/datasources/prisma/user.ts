@@ -1,12 +1,67 @@
 import { PrismaClient } from '@prisma/client';
-import { ServerContext, SessionContext } from '../../contracts/index.js';
+import { ServerContext, SessionContext, IOAuth2BasicInfo, OAuthUserInfo, GraphqlErrorCode } from '../../contracts/index.js';
 import { injectUser } from '../../decorators/index.js';
 import { PrismaDataSource } from './base.js';
-import { GraphQLError } from 'graphql'
+import { GraphQLError } from 'graphql';
 
 export class UserDataSource extends PrismaDataSource {
     constructor(config: { client: PrismaClient, session: SessionContext }) {
         super(config);
+    }
+
+    async createOrGetUser(context: ServerContext, oauth2: OAuthUserInfo) {
+        const { basic, extra } = oauth2;
+        const data = await this.prisma.user.upsert({
+            where: { email: basic.email },
+            update: {
+                avatar: extra.avatar,
+                bio: extra.bio
+            },
+            create: {
+                username: basic.username,
+                snsName: basic.username,
+                friendlyName: basic.friendlyName,
+                email: basic.email,
+                avatar: extra.avatar,
+                bio: extra.bio,
+                oauth2Bindings: {
+                    create: [basic.sub].map((openId) => ({
+                        openId: openId.toString(),
+                        site: extra.site,
+                        avatar: extra.avatar,
+                        oauth2: {
+                            connectOrCreate: {
+                                where: { unique_provider_clientId: { provider: basic.provider, clientId: basic.clientId } },
+                                create: { provider: basic.provider, clientId: basic.clientId },
+                            }
+                        }
+                    }))
+                }
+            },
+            select: {
+                id: true,
+            }
+        });
+
+        await this.prisma.user_OAuth2.updateMany({
+            where: {
+                oauth2: {
+                    provider: basic.provider,
+                    clientId: basic.clientId
+                },
+                user: {
+                    email: basic.email,
+                }
+            },
+            data: {
+                site: extra.site,
+                avatar: extra.avatar,
+                bio: extra.bio,
+            }
+        });
+
+
+        return data;
     }
 
     @injectUser()
@@ -19,7 +74,10 @@ export class UserDataSource extends PrismaDataSource {
           (SELECT COUNT(*) FROM "Follow" WHERE "followerId" = ${currentUserId} AND "followeeId" = ${userId}) AS "currentUserFollowsTarget",
           (SELECT COUNT(*) FROM "Follow" WHERE "followerId" = ${userId} AND "followeeId" = ${currentUserId}) AS "targetUserFollowsCurrentUser",
           u."snsName",
-          u."friendlyName"
+          u."openId",
+          u."friendlyName",
+          u."avatar",
+          u."bio"
           FROM "User" u
           WHERE u."id" = ${userId};
           `;
@@ -29,16 +87,22 @@ export class UserDataSource extends PrismaDataSource {
         const currentUserFollowsTarget = counts[0]?.currentUserFollowsTarget || 0;
         const targetUserFollowsCurrentUser = counts[0]?.targetUserFollowsCurrentUser || 0;
         const snsName = counts[0]?.snsName || '';
+        const openId = counts[0]?.openId || '';
         const friendlyName = counts[0]?.friendlyName || '';
+        const avatar = counts[0]?.avatar || '';
+        const bio = counts[0]?.bio || '';
         const data = {
             snsName: snsName,
+            openId: openId,
             friendlyName: friendlyName,
             following: { totalCount: parseInt(followeeCount) },
             follower: { totalCount: parseInt(followerCount) },
             followRelation: {
                 followed: currentUserFollowsTarget > 0,
                 followingMe: targetUserFollowsCurrentUser > 0,
-            }
+            },
+            avatar: avatar,
+            bio: bio,
         };
 
         return data;
@@ -48,7 +112,8 @@ export class UserDataSource extends PrismaDataSource {
         if (!input.snsName)
             throw new GraphQLError(`no snsName or openId found`, {
                 extensions: {
-                    code: 'Bad Request',
+                    code: GraphqlErrorCode.BAD_REQUEST,
+                    name: GraphqlErrorCode[GraphqlErrorCode.BAD_REQUEST],
                 },
             });
 
@@ -69,24 +134,30 @@ export class UserDataSource extends PrismaDataSource {
             where: { id: userId },
             select: {
                 _count: {
-                    select: { followees: true, followers: true, oauth2Bindings: true }
+                    select: { asFollowees: true, asFollowers: true, oauth2Bindings: true }
                 },
                 id: true,
                 snsName: true,
                 friendlyName: true,
                 createdAt: true,
                 updatedAt: true,
+                openId: true,
+                avatar: true,
+                bio: true
             },
         });
 
         const data = {
             id: userId,
+            openId: sharedPublicInfo.openId,
             snsName: sharedPublicInfo.snsName,
             friendlyName: sharedPublicInfo.friendlyName,
             createdAt: sharedPublicInfo.createdAt,
             updatedAt: sharedPublicInfo.updatedAt,
-            following: { totalCount: sharedPublicInfo._count.followees },
-            follower: { totalCount: sharedPublicInfo._count.followers },
+            following: { totalCount: sharedPublicInfo._count.asFollowers },
+            follower: { totalCount: sharedPublicInfo._count.asFollowees },
+            avatar: sharedPublicInfo.avatar,
+            bio: sharedPublicInfo.bio,
         };
 
         return data;
@@ -110,7 +181,8 @@ export class UserDataSource extends PrismaDataSource {
         if (!supportedSortFields.includes(sortedKey)) {
             throw new GraphQLError(`${sortedKey} in not a one of supported sort fields.`, {
                 extensions: {
-                    code: 'Bad Request',
+                    code: GraphqlErrorCode.BAD_REQUEST,
+                    name: GraphqlErrorCode[GraphqlErrorCode.BAD_REQUEST],
                 },
             });
         }
@@ -140,7 +212,10 @@ export class UserDataSource extends PrismaDataSource {
                         oauth2: true,
                         openId: true,
                         createdAt: true,
-                        updatedAt: true
+                        updatedAt: true,
+                        site: true,
+                        avatar: true,
+                        bio: true
                     }
                 },
             },
@@ -151,7 +226,7 @@ export class UserDataSource extends PrismaDataSource {
     async getSharedPublicProfileByUserId(context: ServerContext, userId: number) {
         return await this.getMyProfileByUserId(context, { userId: userId });
     }
-    
+
     async getSharedPublicProfile(context: ServerContext, input: any) {
 
         const { id } = await this.getUniqueUser(context, input);

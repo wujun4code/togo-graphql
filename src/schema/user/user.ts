@@ -10,6 +10,8 @@ export const typeDefs = `#graphql
     openId: String!
     createdAt: String!
     updatedAt: String!
+    avatar: String
+    site: String
   }
 
   type OAuth2BindingEdge {
@@ -31,9 +33,21 @@ export const typeDefs = `#graphql
   type PrivateProfileInfo implements SharedPublicProfile {
     oauth2BindingsConnection(input: BaseQueryInput): UserOAuth2BindingConnection!
     snsName: String!
+    openId: String!
     friendlyName: String
     following: UserPublicInfoFollowing!
     follower: UserPublicInfoFollower!
+    avatar: String
+    bio: String
+  }
+
+  input CreateUserInput {
+    snsName: String
+    bio: String
+    friendlyName: String
+    avatar: String
+    email: String
+    username: String
   }
 
   type Query {

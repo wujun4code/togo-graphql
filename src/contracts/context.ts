@@ -3,23 +3,37 @@ import {
     AirDataSource, OpenWeatherMap,
     PrismaDataSource, TravelPlanDataSource,
     WebHookDataSource, LocationPointDataSource, ACLDataSource,
-    PostDataSource, UserDataSource, FollowDataSource
+    PostDataSource, UserDataSource, FollowDataSource, RobotDataSource
 } from '../datasources/index.js';
 
-import { WebHookService } from '../services/index.js';
+import { WebHookService, UserTokenService } from '../services/index.js';
 import { ACL } from '../decorators/index.js';
 
-export interface OAuth2UserInterface {
+export type OAuthUserInfo = {
+    basic: IOAuth2BasicInfo;
+    extra: IOAuth2ExtraProfile;
+}
 
+export interface IOAuth2BasicInfo {
     provider: string;
     clientId: string;
-    id: string;
     sub: string;
     username: string;
-    roles: string[];
-    permissions: string[];
     email: string;
     friendlyName: string;
+}
+
+export interface IOAuth2ExtraProfile {
+    avatar?: string;
+    site?: string;
+    bio?: string;
+}
+
+export interface OAuth2UserInterface extends IOAuth2BasicInfo {
+
+    id: string;
+    roles: string[];
+    permissions: string[];
     hasRole: (roleName: string) => boolean;
     hasPermission: (permission: string) => boolean;
 }
@@ -95,6 +109,7 @@ export interface SessionContext {
 export interface ServiceContext {
     acl: ACL;
     webHook: WebHookService;
+    jwt: UserTokenService;
 }
 
 export interface HttpContext {
@@ -115,6 +130,7 @@ export interface IDataSources {
     post: PostDataSource;
     user: UserDataSource;
     follow: FollowDataSource;
+    robot: RobotDataSource;
 }
 
 export interface ServerContext {

@@ -1,5 +1,6 @@
 import { GraphQLError } from 'graphql';
 import { withAuthentication, withAuthorization } from '../../decorators/index.js';
+import { GraphqlErrorCode } from '../../contracts/index.js';
 
 export const resolvers = {
     Query: {
@@ -23,7 +24,8 @@ export const resolvers = {
             const { id } = args.input;
             if (!id) throw new GraphQLError(`no id found`, {
                 extensions: {
-                    code: 'Bad Request',
+                    code: GraphqlErrorCode.BAD_REQUEST,
+                    name: GraphqlErrorCode[GraphqlErrorCode.BAD_REQUEST],
                 },
             });
             return context.dataSources.travelPlan.updateUnique(context, args.input);

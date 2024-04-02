@@ -6,8 +6,8 @@ model Follow {
   followerId  Int
   followeeId  Int
 
-  follower    User @relation(name: "Followers", fields: [followerId], references: [id])
-  followee    User @relation(name: "Followees", fields: [followeeId], references: [id])
+  follower    User @relation(name: "AsFollowers", fields: [followerId], references: [id])
+  followee    User @relation(name: "AsFollowees", fields: [followeeId], references: [id])
 
   followedAt  DateTime @default(now()) @db.Timestamptz(3)
 

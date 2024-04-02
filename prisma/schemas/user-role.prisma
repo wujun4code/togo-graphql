@@ -1,3 +1,8 @@
+enum UserType {
+  HUMAN
+  ORG
+  BOT
+}
 
 model User {
   id                Int                 @id @default(autoincrement())
@@ -6,18 +11,37 @@ model User {
   friendlyName      String?
   
   snsName           String              @unique @default(cuid())
+  openId            String              @unique @default(uuid())
+
+  avatar            String?
+  bio               String?
 
   posts             Post[]
   travelPlans       TravelPlan[]
   roles             RoleUser[]
 
-  followers         Follow[] @relation(name: "Followers")
-  followees         Follow[] @relation(name: "Followees")
+  asFollowers         Follow[] @relation(name: "AsFollowers")
+  asFollowees         Follow[] @relation(name: "AsFollowees")
 
   oauth2Bindings    User_OAuth2[] @relation(name: "OAuth2_Binding")
 
   createdAt         DateTime @unique() @default(now()) @db.Timestamptz(3)
   updatedAt         DateTime @unique() @default(now()) @updatedAt @db.Timestamptz(3)
+
+  createdComments   PostComment[]  @relation(name:"comments")
+
+  userType          UserType       @default(HUMAN)
+
+
+  relatedOrganization      Organization?   @relation(name:"OrganizationRelatedUser")
+
+  createdOrganizations     Organization[]  @relation(name:"OrganizationCreator")
+
+  rolesInOrganization      OrganizationUserRole[]  @relation(name:"UserOrganizationUserRole")
+
+  managedRobots     Robot[]                @relation(name:"RobotsBelongsToUser")
+
+  relatedRobot      Robot?                 @relation(name:"RobotRelatedUser")
 }
 
 model OAuth2 {
@@ -42,6 +66,10 @@ model User_OAuth2 {
 
   openId            String
 
+  avatar            String?
+  site              String?
+  bio               String?
+
   createdAt         DateTime @unique() @default(now()) @db.Timestamptz(3)
   updatedAt         DateTime @unique() @default(now()) @updatedAt @db.Timestamptz(3)
 
@@ -53,6 +81,8 @@ model Role {
   name              String              @unique
   description       String
   users             RoleUser[]
+
+  usersInOrganizations    OrganizationUserRole[]  @relation(name:"RoleOrganizationUserRole")
 }
 
 model RoleUser {

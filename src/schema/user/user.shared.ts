@@ -3,14 +3,19 @@ export const typeDefs = `#graphql
   interface SharedPublicProfile {
     snsName: String!
     friendlyName: String
+    avatar: String
+    bio: String
   }
 
   type UserPublicInfo implements SharedPublicProfile {
     snsName: String!
+    openId: String!
     friendlyName: String
     following: UserPublicInfoFollowing!
     follower: UserPublicInfoFollower!
     followRelation: FollowRelation!
+    avatar: String
+    bio: String
   }
 
   type FollowRelation {
@@ -30,11 +35,22 @@ export const typeDefs = `#graphql
     snsName: String
   }
 
+  type PublicProfilePostConnection {
+    totalCount: Int!
+    edges: [PostEdge]!
+    pageInfo: PageInfo!
+  }
+
   type SharedPublicProfileInfo implements SharedPublicProfile {
     snsName: String!
+    openId: String!
     friendlyName: String
     following: UserPublicInfoFollowing!
     follower: UserPublicInfoFollower!
+    avatar: String
+    bio: String
+
+    posts(input: BaseQueryInput): PublicProfilePostConnection!
   }
 
   type Query {

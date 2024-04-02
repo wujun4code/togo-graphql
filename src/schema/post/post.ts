@@ -1,12 +1,5 @@
 export const typeDefs = `#graphql
 
-  type Post {
-    id: ID!
-    content: String!
-    postedAt: String!
-    authorInfo: UserPublicInfo!
-  }
-
   type SharedPublicPost {
     id: ID!
     content: String!
@@ -17,16 +10,6 @@ export const typeDefs = `#graphql
   input CreatePostInput {
     content: String!
     published: Boolean
-  }
-
-  input FollowInput {
-    openId: String
-    snsName: String
-  }
-
-  type FollowOperationResult {
-    totalFollowing: Int!
-    followerRank: Int!
   }
   
   input TimelineQueryInput {
@@ -40,16 +23,45 @@ export const typeDefs = `#graphql
      skip: Int! = 0
      filters: JSON
      sorter: JSON
+     cursor: String
+  }
+
+  type PostEdge {
+    cursor: String!
+    node: Post!
+  }
+
+  type TimelinePostConnection {
+    totalCount: Int!
+    edges: [PostEdge]!
+    pageInfo: PageInfo!
+  }
+
+  type Timeline {
+    posts(input: BaseQueryInput): TimelinePostConnection!
+  }
+
+  type Post {
+    id: ID!
+    content: String!
+    postedAt: String!
+    authorInfo: UserPublicInfo!
+
+    comments(input: BaseQueryInput): PostCommentConnection!
+  }
+
+  type TrendingFeed {
+    posts(input: BaseQueryInput): TimelinePostConnection!
   }
 
   type Query {
-    timeline(input: BaseQueryInput): [Post!]
-    trendingFeed(input: BaseQueryInput): [SharedPublicPost!]
+    timeline: Timeline!
+    trendingFeed: TrendingFeed!
     followers: [UserPublicInfo!]
+    post(id: ID!): Post
   }
 
   type Mutation {
     createPost(input: CreatePostInput!): Post
-    follow(input: FollowInput): FollowOperationResult
   }
 `

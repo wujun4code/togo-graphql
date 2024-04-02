@@ -6,6 +6,31 @@ model Post {
   author    User    @relation(fields: [authorId], references: [id])
   postedAt  DateTime @unique() @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @unique() @updatedAt @db.Timestamptz(3)
+
+  comments PostComment[] @relation(name:"commentsTo")
+}
+
+model PostComment {
+  id        Int     @id @default(autoincrement())
+
+  postId    Int
+  post      Post    @relation(name:"commentsTo", fields: [postId], references: [id], onDelete: Cascade)
+
+  content   String
+
+  threadId        Int?
+  thread          PostComment?   @relation(name:"ThreadComments", fields: [threadId], references: [id], onDelete: Cascade)
+  threadComments  PostComment[]  @relation("ThreadComments")
+
+  replyToId        Int?
+  replyTo          PostComment?   @relation(name:"ReplyComments", fields: [replyToId], references: [id], onDelete: Cascade)
+  replyToComments  PostComment[]  @relation("ReplyComments")
+
+  authorId  Int
+  author    User    @relation(name:"comments", fields: [authorId], references: [id])
+
+  createdAt  DateTime @unique() @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @unique() @updatedAt @db.Timestamptz(3)
 }
 
 model Post_UserACLRule {

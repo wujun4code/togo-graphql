@@ -26,8 +26,8 @@ model Follow {
   followerId Int
   followeeId Int
 
-  follower User @relation(name: "Followers", fields: [followerId], references: [id])
-  followee User @relation(name: "Followees", fields: [followeeId], references: [id])
+  follower User @relation(name: "AsFollowers", fields: [followerId], references: [id])
+  followee User @relation(name: "AsFollowees", fields: [followeeId], references: [id])
 
   followedAt DateTime @default(now()) @db.Timestamptz(3)
 
@@ -35,20 +35,82 @@ model Follow {
 }
 
 //
+// organization.prisma
+//
+
+model Organization {
+  id Int @id @default(autoincrement())
+
+  relatedUserId Int  @unique
+  relatedUser   User @relation("OrganizationRelatedUser", fields: [relatedUserId], references: [id])
+
+  createdById Int
+  createdBy   User @relation("OrganizationCreator", fields: [createdById], references: [id])
+
+  createdAt DateTime @unique() @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @unique() @default(now()) @updatedAt @db.Timestamptz(3)
+
+  usersWithRoles OrganizationUserRole[] @relation(name: "OrganizationOrganizationUserRole")
+
+  managedRobots Robot[] @relation(name: "RobotsManagedByOrganization")
+}
+
+model OrganizationUserRole {
+  id Int @id @default(autoincrement())
+
+  organizationId Int
+  organization   Organization @relation("OrganizationOrganizationUserRole", fields: [organizationId], references: [id])
+
+  userId Int
+  user   User @relation("UserOrganizationUserRole", fields: [userId], references: [id])
+
+  roleId Int
+  role   Role @relation("RoleOrganizationUserRole", fields: [roleId], references: [id])
+
+  createdAt DateTime @unique() @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @unique() @default(now()) @updatedAt @db.Timestamptz(3)
+}
+
+//
 // post.prisma
 //
 
 model Post {
-  id                 Int                  @id @default(autoincrement())
-  content            String
-  published          Boolean              @default(false)
-  authorId           Int
-  author             User                 @relation(fields: [authorId], references: [id])
-  postedAt           DateTime             @unique() @default(now()) @db.Timestamptz(3)
-  updatedAt          DateTime             @unique() @updatedAt @db.Timestamptz(3)
+  id        Int      @id @default(autoincrement())
+  content   String
+  published Boolean  @default(false)
+  authorId  Int
+  author    User     @relation(fields: [authorId], references: [id])
+  postedAt  DateTime @unique() @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @unique() @updatedAt @db.Timestamptz(3)
+
+  comments           PostComment[]        @relation(name: "commentsTo")
   Post_UserACLRule   Post_UserACLRule[]
   Post_RoleACLRule   Post_RoleACLRule[]
   Post_PublicACLRule Post_PublicACLRule[]
+}
+
+model PostComment {
+  id Int @id @default(autoincrement())
+
+  postId Int
+  post   Post @relation(name: "commentsTo", fields: [postId], references: [id], onDelete: Cascade)
+
+  content String
+
+  threadId       Int?
+  thread         PostComment?  @relation(name: "ThreadComments", fields: [threadId], references: [id], onDelete: Cascade)
+  threadComments PostComment[] @relation("ThreadComments")
+
+  replyToId       Int?
+  replyTo         PostComment?  @relation(name: "ReplyComments", fields: [replyToId], references: [id], onDelete: Cascade)
+  replyToComments PostComment[] @relation("ReplyComments")
+
+  authorId Int
+  author   User @relation(name: "comments", fields: [authorId], references: [id])
+
+  createdAt DateTime @unique() @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @unique() @updatedAt @db.Timestamptz(3)
 }
 
 model Post_UserACLRule {
@@ -92,6 +154,44 @@ model Post_PublicACLRule {
   post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@unique([wildcard, postId], name: "unique_wildcard_post_constraint")
+}
+
+//
+// robot.prisma
+//
+
+model Robot {
+  id Int @id @default(autoincrement())
+
+  hookUrl String?
+  website String?
+
+  createdAt DateTime @unique() @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @unique() @default(now()) @updatedAt @db.Timestamptz(3)
+
+  headers RobotHookHeader[]
+
+  managingOrganizationId Int?
+  managingOrganization   Organization? @relation("RobotsManagedByOrganization", fields: [managingOrganizationId], references: [id])
+
+  managingUserId Int?
+  managingUser   User? @relation("RobotsBelongsToUser", fields: [managingUserId], references: [id])
+
+  relatedUserId Int  @unique()
+  relatedUser   User @relation("RobotRelatedUser", fields: [relatedUserId], references: [id])
+}
+
+model RobotHookHeader {
+  id Int @id @default(autoincrement())
+
+  robotId Int
+  robot   Robot @relation(fields: [robotId], references: [id])
+
+  key   String
+  value String
+
+  createdAt DateTime @unique() @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @unique() @default(now()) @updatedAt @db.Timestamptz(3)
 }
 
 //
@@ -173,6 +273,12 @@ model TravelPlan_PublicACLRule {
 // user-role.prisma
 //
 
+enum UserType {
+  HUMAN
+  ORG
+  BOT
+}
+
 model User {
   id           Int     @id @default(autoincrement())
   email        String  @unique
@@ -180,18 +286,36 @@ model User {
   friendlyName String?
 
   snsName String @unique @default(cuid())
+  openId  String @unique @default(uuid())
+
+  avatar String?
+  bio    String?
 
   posts       Post[]
   travelPlans TravelPlan[]
   roles       RoleUser[]
 
-  followers Follow[] @relation(name: "Followers")
-  followees Follow[] @relation(name: "Followees")
+  asFollowers Follow[] @relation(name: "AsFollowers")
+  asFollowees Follow[] @relation(name: "AsFollowees")
 
   oauth2Bindings User_OAuth2[] @relation(name: "OAuth2_Binding")
 
-  createdAt              DateTime                 @unique() @default(now()) @db.Timestamptz(3)
-  updatedAt              DateTime                 @unique() @default(now()) @updatedAt @db.Timestamptz(3)
+  createdAt DateTime @unique() @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @unique() @default(now()) @updatedAt @db.Timestamptz(3)
+
+  createdComments PostComment[] @relation(name: "comments")
+
+  userType UserType @default(HUMAN)
+
+  relatedOrganization Organization? @relation(name: "OrganizationRelatedUser")
+
+  createdOrganizations Organization[] @relation(name: "OrganizationCreator")
+
+  rolesInOrganization OrganizationUserRole[] @relation(name: "UserOrganizationUserRole")
+
+  managedRobots Robot[] @relation(name: "RobotsBelongsToUser")
+
+  relatedRobot           Robot?                   @relation(name: "RobotRelatedUser")
   Post_UserACLRule       Post_UserACLRule[]
   TravelPlan_UserACLRule TravelPlan_UserACLRule[]
 }
@@ -218,6 +342,10 @@ model User_OAuth2 {
 
   openId String
 
+  avatar String?
+  site   String?
+  bio    String?
+
   createdAt DateTime @unique() @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @unique() @default(now()) @updatedAt @db.Timestamptz(3)
 
@@ -225,10 +353,12 @@ model User_OAuth2 {
 }
 
 model Role {
-  id                     Int                      @id @default(autoincrement())
-  name                   String                   @unique
-  description            String
-  users                  RoleUser[]
+  id          Int        @id @default(autoincrement())
+  name        String     @unique
+  description String
+  users       RoleUser[]
+
+  usersInOrganizations   OrganizationUserRole[]   @relation(name: "RoleOrganizationUserRole")
   Post_RoleACLRule       Post_RoleACLRule[]
   TravelPlan_RoleACLRule TravelPlan_RoleACLRule[]
 }

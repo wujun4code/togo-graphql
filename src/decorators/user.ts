@@ -20,19 +20,21 @@ export async function ensureUserInitialized(context) {
             snsName: user.username,
             friendlyName: user.friendlyName,
             email: user.email,
-            roles: {
-                create: user.roles.map((roleName) => ({
-                    role: {
-                        connectOrCreate: {
-                            where: { name: roleName },
-                            create: { name: roleName, description: `the role named ${roleName}` }
+            ...(user.roles && {
+                roles: {
+                    create: user.roles.map((roleName) => ({
+                        role: {
+                            connectOrCreate: {
+                                where: { name: roleName },
+                                create: { name: roleName, description: `the role named ${roleName}` }
+                            }
                         }
-                    }
-                })),
-            },
+                    })),
+                }
+            }),
             oauth2Bindings: {
                 create: [user.sub].map((openId) => ({
-                    openId: openId,
+                    openId: openId.toString(),
                     oauth2: {
                         connectOrCreate: {
                             where: { unique_provider_clientId: { provider: user.provider, clientId: user.clientId } },

@@ -1,0 +1,36 @@
+
+model Robot {
+  
+  id                Int                        @id @default(autoincrement())
+
+  hookUrl           String?
+  website           String?                   
+
+  createdAt         DateTime                   @unique()   @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime                   @unique()   @default(now()) @updatedAt @db.Timestamptz(3)
+
+  headers           RobotHookHeader[]
+
+  managingOrganizationId    Int?
+  managingOrganization      Organization?      @relation("RobotsManagedByOrganization",fields: [managingOrganizationId], references: [id])
+
+  managingUserId    Int?
+  managingUser      User?                      @relation("RobotsBelongsToUser",fields: [managingUserId], references: [id])
+
+  relatedUserId     Int                        @unique()
+  relatedUser       User                       @relation("RobotRelatedUser",fields: [relatedUserId], references: [id])
+}
+
+model RobotHookHeader {
+
+  id               Int  @id                   @default(autoincrement())
+  
+  robotId          Int
+  robot            Robot                      @relation(fields: [robotId], references: [id])
+
+  key              String
+  value            String
+
+  createdAt        DateTime                   @unique()  @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime                   @unique()  @default(now()) @updatedAt @db.Timestamptz(3)  
+}

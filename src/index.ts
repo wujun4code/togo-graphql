@@ -6,7 +6,7 @@ import {
     LocationDataSource, WeatherDataSource, AirDataSource,
     IRESTDataSourceConfig, OpenWeatherMap, PrismaDataSource,
     TravelPlanDataSource, WebHookDataSource, LocationPointDataSource,
-    ACLDataSource, PostDataSource, UserDataSource, FollowDataSource
+    ACLDataSource, PostDataSource, UserDataSource, FollowDataSource, RobotDataSource
 } from './datasources/index.js';
 import responseCachePlugin from '@apollo/server-plugin-response-cache';
 import { DataSourceConfig } from '@apollo/datasource-rest';
@@ -16,13 +16,14 @@ import { resolvers } from './resolvers/index.js';
 import { typeDefs } from './schema/index.js';
 import { ApolloServerPluginCacheControl } from '@apollo/server/plugin/cacheControl';
 import { ACL } from './decorators/index.js';
-import { WebHookService } from './services/index.js';
+import { WebHookService, UserTokenService, GitHubOAuth2Provider } from './services/index.js';
 import http from 'http';
 import cors from 'cors';
 import express, { Request, Response, NextFunction } from 'express';
 import 'dotenv/config'
 import { PrismaClient } from '@prisma/client';
 import { isbot } from "isbot";
+
 const PORT = process.env.PORT || 4000;
 
 const app = express();
@@ -58,7 +59,7 @@ const server = new ApolloServer<ServerContext>({
     typeDefs: typeDefs,
     resolvers: resolvers,
     cache: new InMemoryLRUCache(),
-    plugins: [ApolloServerPluginDrainHttpServer({ httpServer }), ApolloServerPluginCacheControl({ defaultMaxAge: 30 }), responseCachePlugin()],
+    plugins: [ApolloServerPluginDrainHttpServer({ httpServer }), ApolloServerPluginCacheControl({ defaultMaxAge: 0 }), responseCachePlugin()],
 });
 
 interface CustomRequest extends Request {
@@ -76,11 +77,14 @@ const extractToken = (req: CustomRequest, res: Response) => {
     const authHeader = req.headers.authorization;
 
     if (authHeader && authHeader.toLowerCase().startsWith('bearer ')) {
-        accessToken = authHeader.slice(7);
+        accessToken = authHeader.slice(7).trim();
         provider = req.headers[tokenProviderKey].toString() || "keycloak";
         clientId = req.headers[clientIdKey].toString();
     }
-    return { accessToken, provider, clientId };
+
+    const data = { accessToken, provider, clientId };
+    //console.log(`extractToken:${JSON.stringify(data)}`);
+    return data;
 }
 
 const blockBot = () => {
@@ -95,7 +99,9 @@ const blockBot = () => {
 await server.start();
 
 function parseJwt(token) {
-    return JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+    const spilt = token.split('.');
+    if (spilt.length < 2) return null;
+    return JSON.parse(Buffer.from(spilt[1], 'base64').toString());
 }
 
 function extractUser({ accessToken, provider, clientId }: { accessToken: string, provider: string, clientId: string }) {
@@ -108,7 +114,7 @@ function extractUser({ accessToken, provider, clientId }: { accessToken: string,
 
                     const oauth2User = new KeycloakAccessTokenUser(clientId, keycloakAccessToken);
 
-                    console.log(`oauth2User:${JSON.stringify(oauth2User)}`);
+                    // console.log(`oauth2User:${JSON.stringify(oauth2User)}`);
                     const user: ExtendedUserInterface = {
                         ...oauth2User,
                         extendedRoles: []
@@ -116,6 +122,19 @@ function extractUser({ accessToken, provider, clientId }: { accessToken: string,
 
                     return user;
                 }
+
+            default: {
+                //console.log(`accessToken:${JSON.stringify(accessToken)}`);
+                const payload = parseJwt(accessToken);
+                if (payload == null) return null;
+                //console.log(`oauth2User:${JSON.stringify(payload)}`);
+                const user: ExtendedUserInterface = {
+                    ...payload,
+                    extendedRoles: []
+                };
+
+                return user;
+            }
         }
     }
     return null;
@@ -150,6 +169,9 @@ app.use(
             const webHookService = new WebHookService({ prisma, session });
             webHookService.start();
 
+            const jwt = new UserTokenService();
+            jwt.use(new GitHubOAuth2Provider(), 'github');
+
             const contextValue: ServerContext = {
                 session: session,
                 dataSources: {
@@ -165,8 +187,9 @@ app.use(
                     post: new PostDataSource(prismaConfig),
                     user: new UserDataSource(prismaConfig),
                     follow: new FollowDataSource(prismaConfig),
+                    robot: new RobotDataSource(prismaConfig),
                 },
-                services: { acl, webHook: webHookService }
+                services: { acl, webHook: webHookService, jwt: jwt }
             };
 
             return contextValue;

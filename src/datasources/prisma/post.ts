@@ -1,7 +1,9 @@
 import { PrismaClient } from '@prisma/client';
-import { ServerContext, SessionContext } from '../../contracts/index.js';
+import { ServerContext, SessionContext, GraphqlErrorCode } from '../../contracts/index.js';
 import { injectUser } from '../../decorators/index.js';
 import { PrismaDataSource } from './base.js';
+import { GraphQLError } from 'graphql';
+
 
 const defaultACLRule = {
     "*": { read: false, write: false },
@@ -20,25 +22,110 @@ export class PostDataSource extends PrismaDataSource {
         super(config);
     }
 
+    async getPost(context: ServerContext, input: any) {
+        if (!input) input = {};
+        const { id } = input;
+
+        if (!id) {
+            throw new GraphQLError(`id ${id} not found.`, {
+                extensions: {
+                    code: GraphqlErrorCode.BAD_REQUEST,
+                    name: GraphqlErrorCode[GraphqlErrorCode.BAD_REQUEST],
+                },
+            });
+        }
+
+        const post = await this.prisma.post.findUnique({ where: { id: id } });
+
+        return post;
+    }
+
     async getTrendingFeed(context: ServerContext, input: any) {
+
         if (!input) input = {};
         const limit = input.limit ? input.limit : 10;
         const skip = input.skip ? input.skip : 0;
-        const sorter = input.sorted;
+        const sorter = input.sorted ? input.sorted : { postedAt: 'desc' };
         const filters = input.filters ? input.filters : {};
-
+        const cursor = input.cursor ? input.cursor : null;
+        const sortedKey = Object.keys(sorter)[0];
+        const sortValue = Object.values(sorter)[0]
+        const cursorFilter = cursor != null ? sortValue === 'desc' ? { [sortedKey]: { lt: cursor } } : { [sortedKey]: { gt: cursor } } : {};
+        const supportedSortFields = ['updatedAt', 'id', 'postedAt'];
+        if (!supportedSortFields.includes(sortedKey)) {
+            throw new GraphQLError(`${sortedKey} in not a one of supported sort fields.`, {
+                extensions: {
+                    code: GraphqlErrorCode.BAD_REQUEST,
+                    name: GraphqlErrorCode[GraphqlErrorCode.BAD_REQUEST],
+                },
+            });
+        }
         const trendingFeedPosts = await this.prisma.post.findMany({
             where: {
                 ...filters,
             },
+            ...(cursor && sortedKey && supportedSortFields.includes(sortedKey) && {
+                cursor: {
+                    postedAt: cursor
+                }
+            }),
             orderBy: sorter ? sorter : {
                 postedAt: 'desc',
             },
             take: limit,
-            skip: skip,
         });
 
         return trendingFeedPosts;
+    }
+
+    async getByUser(context: ServerContext, input: any) {
+        if (!input) input = {};
+        const userId = input.userId;
+
+        if (!userId)
+            throw new GraphQLError(`user not found.`, {
+                extensions: {
+                    code: GraphqlErrorCode.BAD_REQUEST,
+                    name: GraphqlErrorCode[GraphqlErrorCode.BAD_REQUEST],
+                },
+            });
+
+        const limit = input.limit ? input.limit : 10;
+        const skip = input.skip ? input.skip : 0;
+        const sorter = input.sorted ? input.sorted : { postedAt: 'desc' };
+        const filters = input.filters ? input.filters : {};
+        const cursor = input.cursor ? input.cursor : null;
+        const sortedKey = Object.keys(sorter)[0];
+        const sortValue = Object.values(sorter)[0]
+        const cursorFilter = cursor != null ? sortValue === 'desc' ? { [sortedKey]: { lt: cursor } } : { [sortedKey]: { gt: cursor } } : {};
+
+        const supportedSortFields = ['updatedAt', 'id', 'postedAt'];
+        if (!supportedSortFields.includes(sortedKey)) {
+            throw new GraphQLError(`${sortedKey} in not a one of supported sort fields.`, {
+                extensions: {
+                    code: GraphqlErrorCode.BAD_REQUEST,
+                    name: GraphqlErrorCode[GraphqlErrorCode.BAD_REQUEST],
+                },
+            });
+        }
+        const postsByUser = await this.prisma.post.findMany({
+            where: {
+                authorId: userId,
+                ...filters,
+            },
+            ...(cursor && sortedKey && supportedSortFields.includes(sortedKey) && {
+                cursor: {
+                    postedAt: cursor
+                }
+            }),
+            orderBy: sorter ? sorter : {
+                postedAt: 'desc',
+            },
+            take: limit,
+            //skip: skip,
+        });
+
+        return postsByUser;
     }
 
     @injectUser()
@@ -47,12 +134,22 @@ export class PostDataSource extends PrismaDataSource {
         if (!input) input = {};
         const limit = input.limit ? input.limit : 10;
         const skip = input.skip ? input.skip : 0;
-        const sorter = input.sorted;
+        const sorter = input.sorted ? input.sorted : { postedAt: 'desc' };
         const filters = input.filters ? input.filters : {};
-        // SELECT "Post".*
-        // FROM "Follow" JOIN "User" ON "Follow"."followeeId" = "User"."id" 
-        // JOIN "Post" ON "User"."id" = "Post"."authorId"
-        // WHERE "Follow"."followerId" = 2
+        const cursor = input.cursor ? input.cursor : null;
+        const sortedKey = Object.keys(sorter)[0];
+        const sortValue = Object.values(sorter)[0]
+        const cursorFilter = cursor != null ? sortValue === 'desc' ? { [sortedKey]: { lt: cursor } } : { [sortedKey]: { gt: cursor } } : {};
+
+        const supportedSortFields = ['updatedAt', 'id', 'postedAt'];
+        if (!supportedSortFields.includes(sortedKey)) {
+            throw new GraphQLError(`${sortedKey} in not a one of supported sort fields.`, {
+                extensions: {
+                    code: GraphqlErrorCode.BAD_REQUEST,
+                    name: GraphqlErrorCode[GraphqlErrorCode.BAD_REQUEST],
+                },
+            });
+        }
         const timelinePosts = await this.prisma.post.findMany({
             where: {
                 OR: [
@@ -63,7 +160,7 @@ export class PostDataSource extends PrismaDataSource {
                     {
                         ...filters,
                         author: {
-                            followees: {
+                            asFollowees: {
                                 some: {
                                     followerId: currentUserId
                                 }
@@ -72,11 +169,16 @@ export class PostDataSource extends PrismaDataSource {
                     },
                 ],
             },
+            ...(cursor && sortedKey && supportedSortFields.includes(sortedKey) && {
+                cursor: {
+                    postedAt: cursor
+                }
+            }),
             orderBy: sorter ? sorter : {
                 postedAt: 'desc',
             },
             take: limit,
-            skip: skip,
+            //skip: skip,
         });
 
         return timelinePosts;
@@ -84,6 +186,9 @@ export class PostDataSource extends PrismaDataSource {
 
     @injectUser()
     async create(context: ServerContext, input: any) {
+
+        const { services: { webHook }, dataSources: { acl }, session: { user } } = context;
+
         const created = await this.prisma.post.create({
             data: {
                 author: {
@@ -95,7 +200,7 @@ export class PostDataSource extends PrismaDataSource {
                 published: input.published ? input.published : true,
             }
         });
-        const { services: { webHook }, dataSources: { acl }, session: { user } } = context;
+
 
         const resourceName = 'post';
 
@@ -227,5 +332,102 @@ export class PostDataSource extends PrismaDataSource {
     async findUnique(context: ServerContext, filters: any) {
         const [item] = await this.findMany(context, filters);
         return item;
+    }
+
+    async findRootComments(context: ServerContext, input: any) {
+        if (!input) input = {};
+
+        const postId = input.postId;
+
+        if (!postId) {
+            throw new GraphQLError(`${postId} in not a valid post id.`, {
+                extensions: {
+                    code: GraphqlErrorCode.BAD_REQUEST,
+                    name: GraphqlErrorCode[GraphqlErrorCode.BAD_REQUEST],
+                },
+            });
+        }
+
+        const limit = input.limit ? input.limit : 10;
+        const skip = input.skip ? input.skip : 0;
+        const sorter = input.sorted ? input.sorted : { createdAt: 'desc' };
+        const filters = input.filters ? input.filters : {};
+        const cursor = input.cursor ? input.cursor : null;
+        const sortedKey = Object.keys(sorter)[0];
+        const sortValue = Object.values(sorter)[0]
+        const cursorFilter = cursor != null ? sortValue === 'desc' ? { [sortedKey]: { lt: cursor } } : { [sortedKey]: { gt: cursor } } : {};
+
+        const supportedSortFields = ['updatedAt', 'id', 'createdAt'];
+        if (!supportedSortFields.includes(sortedKey)) {
+            throw new GraphQLError(`${sortedKey} in not a one of supported sort fields.`, {
+                extensions: {
+                    code: GraphqlErrorCode.BAD_REQUEST,
+                    name: GraphqlErrorCode[GraphqlErrorCode.BAD_REQUEST],
+                },
+            });
+        }
+        const rootComments = await this.prisma.postComment.findMany({
+            where: {
+                postId: parseInt(postId),
+                threadId: null,
+                replyTo: null,
+                ...filters,
+            },
+            ...(cursor && sortedKey && supportedSortFields.includes(sortedKey) && {
+                cursor: {
+                    createdAt: cursor
+                }
+            }),
+            orderBy: sorter ? sorter : {
+                createdAt: 'desc',
+            },
+            take: limit,
+            //skip: skip,
+        });
+
+        return rootComments;
+    }
+
+    async createComment(context: ServerContext, input: any) {
+
+        const { postId, replyToId, threadId, content } = input;
+
+        const { services: { webHook }, dataSources: { acl }, session: { user } } = context;
+
+        const created = await this.prisma.postComment.create({
+            data: {
+                author: {
+                    connect: {
+                        id: parseInt(context.session.user.id),
+                    }
+                },
+                ...(replyToId !== undefined ?
+                    {
+                        replyTo: {
+                            connect: {
+                                id: parseInt(replyToId)
+                            }
+                        }
+                    }
+                    : {}),
+                ...(threadId !== undefined ?
+                    {
+                        thread: {
+                            connect: {
+                                id: parseInt(threadId)
+                            }
+                        }
+                    }
+                    : {}),
+                post: {
+                    connect: {
+                        id: parseInt(postId)
+                    }
+                },
+                content: content,
+            }
+        });
+
+        return created;
     }
 }

@@ -13,3 +13,4 @@ export * from './prisma/location-point.js';
 export * from './prisma/acl.js';
 export * from './prisma/post.js';
 export * from './prisma/follow.js';
+export * from './prisma/robot.js';

@@ -2,6 +2,7 @@ import { ServiceContext, SessionContext, ServerContext } from '../contracts/inde
 import { checkRole } from './acl.js';
 import { GraphQLError } from 'graphql';
 import { ensureUserInitialized } from './user.js';
+import { GraphqlErrorCode } from '../contracts/index.js';
 
 export function authorize() {
 
@@ -54,7 +55,8 @@ export function checkUser(context: ServerContext) {
     if (!user) {
         throw new GraphQLError(`no authorized.`, {
             extensions: {
-                code: 'Unauthorized',
+                code: GraphqlErrorCode.UNAUTHORIZED,
+                name: GraphqlErrorCode[GraphqlErrorCode.UNAUTHORIZED],
             },
         });
     }
