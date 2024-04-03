@@ -41,6 +41,11 @@ export const typeDefs = `#graphql
     pageInfo: PageInfo!
   }
 
+  type SharedPublicProfileInfoEdge {
+    cursor: String!
+    node: SharedPublicProfileInfo!
+  }
+
   type SharedPublicProfileInfo implements SharedPublicProfile {
     snsName: String!
     openId: String!

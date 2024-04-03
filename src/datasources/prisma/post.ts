@@ -184,10 +184,11 @@ export class PostDataSource extends PrismaDataSource {
         return timelinePosts;
     }
 
-    @injectUser()
     async create(context: ServerContext, input: any) {
 
-        const { services: { webHook }, dataSources: { acl }, session: { user } } = context;
+        const { services: { webHook, pubSub }, dataSources: { acl }, session: { user } } = context;
+
+        const { mentioned, content, published } = input;
 
         const created = await this.prisma.post.create({
             data: {
@@ -196,11 +197,10 @@ export class PostDataSource extends PrismaDataSource {
                         id: parseInt(context.session.user.id),
                     }
                 },
-                content: input.content,
-                published: input.published ? input.published : true,
+                content: content,
+                published: published ? published : true,
             }
         });
-
 
         const resourceName = 'post';
 
@@ -236,6 +236,10 @@ export class PostDataSource extends PrismaDataSource {
         })
 
         webHook.invokeCreate(context, resourceName, 'create', created);
+
+        if (Array.isArray(mentioned) && mentioned.length > 0) {
+            pubSub.publish('mentioned', 'created', { post: created, mentioned: mentioned });
+        }
 
         return created;
     }
@@ -386,6 +390,24 @@ export class PostDataSource extends PrismaDataSource {
         });
 
         return rootComments;
+    }
+
+    async getComment(context: ServerContext, input: any) {
+        if (!input) input = {};
+        const { id } = input;
+
+        if (!id) {
+            throw new GraphQLError(`id ${id} not found.`, {
+                extensions: {
+                    code: GraphqlErrorCode.BAD_REQUEST,
+                    name: GraphqlErrorCode[GraphqlErrorCode.BAD_REQUEST],
+                },
+            });
+        }
+
+        const comment = await this.prisma.postComment.findUnique({ where: { id: id } });
+
+        return comment;
     }
 
     async createComment(context: ServerContext, input: any) {

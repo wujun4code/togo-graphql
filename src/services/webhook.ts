@@ -32,6 +32,7 @@ const filteredHeaders = [
 ];
 
 export class WebHookService {
+    private static instance: WebHookService;
 
     wakeQ: queueAsPromised<WakeWebHookTask>;
     pushQ: queueAsPromised<PushWebHookTask>;
@@ -92,9 +93,9 @@ export class WebHookService {
         );
 
         const axiosConfig: AxiosRequestConfig = {
-            method: 'POST', 
-            url: targetUrl, 
-            data: arg.data, 
+            method: 'POST',
+            url: targetUrl,
+            data: arg.data,
             headers: {
                 ...filteredRequestHeaders,
                 ...arg.headers,
@@ -104,7 +105,6 @@ export class WebHookService {
 
         try {
             const response: AxiosResponse = await axios(axiosConfig);
-
         } catch (error) {
             const { url, } = error.response?.config || {};
             const { status } = error.response;
@@ -121,4 +121,11 @@ export class WebHookService {
             after: after
         });
     }
+
+    // public static getInstance(): WebHookService {
+    //     if (!WebHookService.instance) {
+    //         WebHookService.instance = new WebHookService();
+    //     }
+    //     return WebHookService.instance;
+    // }
 }

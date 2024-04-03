@@ -7,5 +7,5 @@
     "ignore": [
         "src/**/*.spec.ts"
     ],
-    "exec": "npm start"
+    "exec": "npm run start-dev"
 }

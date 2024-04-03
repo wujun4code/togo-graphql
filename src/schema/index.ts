@@ -13,6 +13,8 @@ import { typeDefs as Follow } from './user/follow.js';
 import { typeDefs as Comment } from './post/comment.js';
 import { typeDefs as Token } from './user/token.js';
 import { typeDefs as Robot } from './robot/robot.js';
+import { typeDefs as Mention } from './user/mention.js';
+
 export const cacheDefs = `#graphql
 enum CacheControlScope {
   PUBLIC
@@ -32,4 +34,4 @@ export const typeDefs = [
   AirNow, TravelPlan,
   Webhook, Post, Comment,
   UserShared, User, Token,
-  Follow, Robot];
+  Follow, Robot, Mention];

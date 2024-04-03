@@ -1,0 +1,21 @@
+import { User } from "./user-role"
+import { Post, PostComment } from "./user-role"
+
+model MentionedHistory {
+  id                   Int                 @id @default(autoincrement())
+  
+  relatedPostId        Int?                 
+  relatedPost          Post?               @relation("MentionedHistoryRelatedPost",fields: [relatedPostId], references: [id])
+
+  relatedCommentId     Int?                 
+  relatedComment       PostComment?        @relation("MentionedHistoryRelatedComment",fields: [relatedCommentId], references: [id])
+
+  mentionedUserId      Int                 
+  mentioned            User                @relation("MentionedRelatedUser",fields: [mentionedUserId], references: [id])
+
+  mentionerUserId      Int                 
+  mentioner            User                @relation("MentionerRelatedUser",fields: [mentionerUserId], references: [id]) 
+
+  createdAt            DateTime @unique()  @default(now()) @db.Timestamptz(3)
+  updatedAt            DateTime @unique()  @default(now()) @updatedAt @db.Timestamptz(3)
+}

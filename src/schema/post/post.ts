@@ -10,6 +10,8 @@ export const typeDefs = `#graphql
   input CreatePostInput {
     content: String!
     published: Boolean
+
+    mentioned: [MentionedInPostInput]
   }
   
   input TimelineQueryInput {
@@ -59,6 +61,10 @@ export const typeDefs = `#graphql
     trendingFeed: TrendingFeed!
     followers: [UserPublicInfo!]
     post(id: ID!): Post
+  }
+
+  input MentionedInPostInput {
+    snsNames: [String]
   }
 
   type Mutation {

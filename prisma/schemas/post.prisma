@@ -1,13 +1,16 @@
 model Post {
-  id        Int     @id @default(autoincrement())
-  content   String
-  published Boolean @default(false)
-  authorId  Int
-  author    User    @relation(fields: [authorId], references: [id])
-  postedAt  DateTime @unique() @default(now()) @db.Timestamptz(3)
-  updatedAt DateTime @unique() @updatedAt @db.Timestamptz(3)
+  id           Int         @id @default(autoincrement())
+  content      String
+  published    Boolean     @default(false)
+  authorId     Int
+  author       User        @relation(fields: [authorId], references: [id])
+  postedAt     DateTime    @unique() @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime    @unique() @updatedAt @db.Timestamptz(3)
 
-  comments PostComment[] @relation(name:"commentsTo")
+  comments     PostComment[] @relation(name:"commentsTo")
+
+  relatedMentionHistory MentionedHistory[] @relation(name:"MentionedHistoryRelatedPost")
+
 }
 
 model PostComment {
@@ -31,6 +34,8 @@ model PostComment {
 
   createdAt  DateTime @unique() @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @unique() @updatedAt @db.Timestamptz(3)
+
+  relatedMentionHistory          MentionedHistory[] @relation(name:"MentionedHistoryRelatedComment")
 }
 
 model Post_UserACLRule {

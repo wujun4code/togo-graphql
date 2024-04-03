@@ -3,10 +3,11 @@ import {
     AirDataSource, OpenWeatherMap,
     PrismaDataSource, TravelPlanDataSource,
     WebHookDataSource, LocationPointDataSource, ACLDataSource,
-    PostDataSource, UserDataSource, FollowDataSource, RobotDataSource
+    PostDataSource, UserDataSource, FollowDataSource,
+    RobotDataSource,
 } from '../datasources/index.js';
 
-import { WebHookService, UserTokenService } from '../services/index.js';
+import { WebHookService, UserTokenService, PubSubService, PubSubManager } from '@services/index.js';
 import { ACL } from '../decorators/index.js';
 
 export type OAuthUserInfo = {
@@ -110,6 +111,8 @@ export interface ServiceContext {
     acl: ACL;
     webHook: WebHookService;
     jwt: UserTokenService;
+    pubSub: PubSubService;
+    pubSubManager: PubSubManager
 }
 
 export interface HttpContext {

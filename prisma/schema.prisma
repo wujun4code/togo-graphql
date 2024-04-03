@@ -35,6 +35,29 @@ model Follow {
 }
 
 //
+// mention.prisma
+//
+
+model MentionedHistory {
+  id Int @id @default(autoincrement())
+
+  relatedPostId Int?
+  relatedPost   Post? @relation("MentionedHistoryRelatedPost", fields: [relatedPostId], references: [id])
+
+  relatedCommentId Int?
+  relatedComment   PostComment? @relation("MentionedHistoryRelatedComment", fields: [relatedCommentId], references: [id])
+
+  mentionedUserId Int
+  mentioned       User @relation("MentionedRelatedUser", fields: [mentionedUserId], references: [id])
+
+  mentionerUserId Int
+  mentioner       User @relation("MentionerRelatedUser", fields: [mentionerUserId], references: [id])
+
+  createdAt DateTime @unique() @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @unique() @default(now()) @updatedAt @db.Timestamptz(3)
+}
+
+//
 // organization.prisma
 //
 
@@ -84,7 +107,10 @@ model Post {
   postedAt  DateTime @unique() @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @unique() @updatedAt @db.Timestamptz(3)
 
-  comments           PostComment[]        @relation(name: "commentsTo")
+  comments PostComment[] @relation(name: "commentsTo")
+
+  relatedMentionHistory MentionedHistory[] @relation(name: "MentionedHistoryRelatedPost")
+
   Post_UserACLRule   Post_UserACLRule[]
   Post_RoleACLRule   Post_RoleACLRule[]
   Post_PublicACLRule Post_PublicACLRule[]
@@ -111,6 +137,8 @@ model PostComment {
 
   createdAt DateTime @unique() @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @unique() @updatedAt @db.Timestamptz(3)
+
+  relatedMentionHistory MentionedHistory[] @relation(name: "MentionedHistoryRelatedComment")
 }
 
 model Post_UserACLRule {
@@ -315,7 +343,11 @@ model User {
 
   managedRobots Robot[] @relation(name: "RobotsBelongsToUser")
 
-  relatedRobot           Robot?                   @relation(name: "RobotRelatedUser")
+  relatedRobot Robot? @relation(name: "RobotRelatedUser")
+
+  asMentioned MentionedHistory[] @relation(name: "MentionedRelatedUser")
+
+  asMentioner            MentionedHistory[]       @relation(name: "MentionerRelatedUser")
   Post_UserACLRule       Post_UserACLRule[]
   TravelPlan_UserACLRule TravelPlan_UserACLRule[]
 }

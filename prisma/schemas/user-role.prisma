@@ -33,15 +33,19 @@ model User {
   userType          UserType       @default(HUMAN)
 
 
-  relatedOrganization      Organization?   @relation(name:"OrganizationRelatedUser")
+  relatedOrganization      Organization?            @relation(name:"OrganizationRelatedUser")
 
-  createdOrganizations     Organization[]  @relation(name:"OrganizationCreator")
+  createdOrganizations     Organization[]           @relation(name:"OrganizationCreator")
 
-  rolesInOrganization      OrganizationUserRole[]  @relation(name:"UserOrganizationUserRole")
+  rolesInOrganization      OrganizationUserRole[]   @relation(name:"UserOrganizationUserRole")
 
-  managedRobots     Robot[]                @relation(name:"RobotsBelongsToUser")
+  managedRobots     Robot[]                         @relation(name:"RobotsBelongsToUser")
 
-  relatedRobot      Robot?                 @relation(name:"RobotRelatedUser")
+  relatedRobot      Robot?                          @relation(name:"RobotRelatedUser")
+
+  asMentioned       MentionedHistory[]              @relation(name:"MentionedRelatedUser")
+
+  asMentioner       MentionedHistory[]              @relation(name:"MentionerRelatedUser")
 }
 
 model OAuth2 {

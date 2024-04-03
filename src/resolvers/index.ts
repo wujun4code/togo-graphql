@@ -11,6 +11,7 @@ import { resolvers as Profile } from './user/profile.js';
 import { resolvers as Comment } from './post/comment.js';
 import { resolvers as Follow } from './user/follow.js';
 import { resolvers as Robot } from './robot/robot.js';
+import { resolvers as Mention } from './user/mention.js';
 
 export const resolvers = [
     Location, Now,
@@ -18,5 +19,5 @@ export const resolvers = [
     TravelPlan, Webhook,
     { JSON: jsonScalar },
     Post, Profile, Comment,
-    Follow, Robot
+    Follow, Robot, Mention
 ];

@@ -16,7 +16,7 @@ import { resolvers } from './resolvers/index.js';
 import { typeDefs } from './schema/index.js';
 import { ApolloServerPluginCacheControl } from '@apollo/server/plugin/cacheControl';
 import { ACL } from './decorators/index.js';
-import { WebHookService, UserTokenService, GitHubOAuth2Provider } from './services/index.js';
+import { WebHookService, UserTokenService, GitHubOAuth2Provider, PubSubService, BuiltInPubSubManager, PubSubManager } from '@services/index.js';
 import http from 'http';
 import cors from 'cors';
 import express, { Request, Response, NextFunction } from 'express';
@@ -169,6 +169,11 @@ app.use(
             const webHookService = new WebHookService({ prisma, session });
             webHookService.start();
 
+            const pubSub = new PubSubService({ prisma, session });
+
+            const pubSubManager = new BuiltInPubSubManager({ pubSub: pubSub })
+            pubSubManager.startAllSubWorkers();
+
             const jwt = new UserTokenService();
             jwt.use(new GitHubOAuth2Provider(), 'github');
 
@@ -189,7 +194,7 @@ app.use(
                     follow: new FollowDataSource(prismaConfig),
                     robot: new RobotDataSource(prismaConfig),
                 },
-                services: { acl, webHook: webHookService, jwt: jwt }
+                services: { acl, webHook: webHookService, jwt: jwt, pubSub: pubSub, pubSubManager: pubSubManager }
             };
 
             return contextValue;

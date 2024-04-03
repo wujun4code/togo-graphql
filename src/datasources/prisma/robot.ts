@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { ServerContext, SessionContext } from '../../contracts/index.js';
 import { injectUser } from '../../decorators/index.js';
 import { PrismaDataSource } from './base.js';
@@ -25,26 +25,38 @@ export class RobotDataSource extends PrismaDataSource {
     async create(context: ServerContext, input: any) {
         const currentUserId = parseInt(context.session.user.id);
         const { relatedUser, hookUrl, website } = input;
-        const data = await this.prisma.robot.create({
-            data: {
-                website: website,
-                hookUrl: hookUrl,
-                relatedUser: {
-                    create: {
-                        snsName: relatedUser.snsName,
-                        email: relatedUser.email,
-                        username: relatedUser.username ? relatedUser.username : relatedUser.snsName,
-                        bio: relatedUser.bio,
-                        friendlyName: relatedUser.friendlyName,
-                        avatar: relatedUser.avatar
-                    }
-                },
-                managingUser: {
-                    connect: { id: currentUserId }
-                }
-            }
-        });
 
-        return data;
+        try {
+            const data = await this.prisma.robot.create({
+                data: {
+                    website: website,
+                    hookUrl: hookUrl,
+                    relatedUser: {
+                        create: {
+                            snsName: relatedUser.snsName,
+                            email: relatedUser.email,
+                            username: relatedUser.username ? relatedUser.username : relatedUser.snsName,
+                            bio: relatedUser.bio,
+                            friendlyName: relatedUser.friendlyName,
+                            avatar: relatedUser.avatar
+                        }
+                    },
+                    managingUser: {
+                        connect: { id: currentUserId }
+                    }
+                }
+            });
+
+            return data;
+        } catch (e) {
+            if (e instanceof Prisma.PrismaClientKnownRequestError) {
+                throw new GraphQLError(e.message, {
+                    extensions: {
+                        code: GraphqlErrorCode.BAD_REQUEST,
+                        name: GraphqlErrorCode[GraphqlErrorCode.BAD_REQUEST],
+                    },
+                });
+            }
+        }
     }
 }
