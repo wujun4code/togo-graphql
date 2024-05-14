@@ -197,7 +197,6 @@ function extractUser({ accessToken, provider, clientId }: { accessToken: string,
     return null;
 }
 
-
 const createServerContext = (session: SessionContext) => {
     const { cache } = server;
 
