@@ -50,11 +50,11 @@ const fetchToken = async () => {
 router.post('/azure', express.json(), async (req, res) => {
 
     try {
-        const authHeader = req.headers.authorization;
 
+        const authHeader = req.headers.authorization;
         if (authHeader && authHeader.toLowerCase().startsWith('bearer ')) {
             const accessToken = authHeader.slice(7).trim();
-            if (accessToken !== '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') {
+            if (accessToken !== process.env.WEBHOOK_TOKEN) {
                 res.status(401).send('Unauthorized');
             }
         }
