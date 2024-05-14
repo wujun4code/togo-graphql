@@ -14,3 +14,5 @@ export * from './prisma/acl.js';
 export * from './prisma/post.js';
 export * from './prisma/follow.js';
 export * from './prisma/robot.js';
+export * from './prisma/mention.js';
+export * from './prisma/notification.js';

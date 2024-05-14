@@ -3,12 +3,13 @@ import {
     AirDataSource, OpenWeatherMap,
     PrismaDataSource, TravelPlanDataSource,
     WebHookDataSource, LocationPointDataSource, ACLDataSource,
-    PostDataSource, UserDataSource, FollowDataSource,
-    RobotDataSource,
+    PostDataSource, UserDataSource, FollowDataSource, MentionHistoryDataSource,
+    RobotDataSource, NotificationDataSource,
 } from '../datasources/index.js';
 
-import { WebHookService, UserTokenService, PubSubService, PubSubManager } from '@services/index.js';
+import { WebHookService, UserTokenService, PubSubService, PubSubManager, ProxyHookHttp } from '../services/index.js';
 import { ACL } from '../decorators/index.js';
+import { PubSub } from 'graphql-subscriptions';
 
 export type OAuthUserInfo = {
     basic: IOAuth2BasicInfo;
@@ -104,7 +105,7 @@ export class KeycloakAccessTokenUser implements OAuth2UserInterface {
 
 export interface SessionContext {
     user?: ExtendedUserInterface,
-    http: HttpContext;
+    http?: HttpContext;
 }
 
 export interface ServiceContext {
@@ -112,7 +113,9 @@ export interface ServiceContext {
     webHook: WebHookService;
     jwt: UserTokenService;
     pubSub: PubSubService;
-    pubSubManager: PubSubManager
+    gqlPubSub: PubSub;
+    pubSubManager: PubSubManager;
+    proxyHookHttp: ProxyHookHttp;
 }
 
 export interface HttpContext {
@@ -134,6 +137,8 @@ export interface IDataSources {
     user: UserDataSource;
     follow: FollowDataSource;
     robot: RobotDataSource;
+    mentionHistory: MentionHistoryDataSource,
+    notification: NotificationDataSource,
 }
 
 export interface ServerContext {
@@ -141,4 +146,3 @@ export interface ServerContext {
     services: ServiceContext;
     dataSources: IDataSources;
 }
-

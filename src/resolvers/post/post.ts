@@ -53,7 +53,9 @@ export const resolvers = {
             return connection;
         },
     },
+
     Post: {
+
         authorInfo: async (parent, args, context, info) => {
             if (context.session.user)
                 return await context.dataSources.user.getPublicInfo(context, parent.authorId);
@@ -76,6 +78,24 @@ export const resolvers = {
             };
 
             return connection;
+        },
+
+        relatedMentionHistories: async (parent, args, context, info) => {
+            const { relatedMentionHistory: list } = await context.dataSources.post.findManyMentionHistory(context, { postId: parent.id });
+            return list;
+        },
+
+        aggregatedInfo: async (parent, args, context, info) => {
+            return { postId: parent.id };
+        },
+    },
+    PostAggregatedInfo: {
+        comment: async (parent, args, context, info) => {
+            const {
+                post
+            } = context.dataSources;
+            const commentTotalCommentCount = await post.countComments(context, { postId: parent.postId });
+            return { totalCount: commentTotalCommentCount };
         },
     },
     SharedPublicPost: {

@@ -2,8 +2,7 @@ import * as fastq from "fastq";
 import type { queueAsPromised } from "fastq";
 import { SessionContext, ServerContext } from '../contracts/index.js';
 import { PrismaClient } from '@prisma/client';
-import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
-import { Request, Response } from 'express';
+import { ProxyHookHttp } from './hook/proxy.http.js';
 
 type WakeWebHookTask = {
     resource: string;
@@ -18,30 +17,19 @@ type PushWebHookTask = {
     data: any;
 }
 
-const filteredHeaders = [
-    'connection',
-    'host',
-    'content-length',
-    'transfer-encoding',
-    'x-forwarded-for',
-    'x-forwarded-proto',
-    'x-forwarded-host',
-    'authorization',
-    'proxy-authorization',
-    'expect',
-];
 
 export class WebHookService {
-    private static instance: WebHookService;
 
     wakeQ: queueAsPromised<WakeWebHookTask>;
     pushQ: queueAsPromised<PushWebHookTask>;
     prisma: PrismaClient;
     session: SessionContext;
+    proxyHookHttp: ProxyHookHttp;
 
-    constructor(config: { prisma: PrismaClient, session: SessionContext }) {
+    constructor(config: { prisma: PrismaClient, session: SessionContext, proxyHookHttp: ProxyHookHttp }) {
         this.prisma = config.prisma;
         this.session = config.session;
+        this.proxyHookHttp = config.proxyHookHttp;
     }
 
     async start() {
@@ -81,36 +69,7 @@ export class WebHookService {
     }
 
     async sendRequest(arg: PushWebHookTask) {
-
-        const { req }: { req: Request } = this.session.http;
-
-        const targetUrl = arg.url;
-
-        const filteredRequestHeaders = Object.fromEntries(
-            Object.entries(req.headers).filter(
-                ([headerName]) => !filteredHeaders.includes(headerName.toLowerCase())
-            )
-        );
-
-        const axiosConfig: AxiosRequestConfig = {
-            method: 'POST',
-            url: targetUrl,
-            data: arg.data,
-            headers: {
-                ...filteredRequestHeaders,
-                ...arg.headers,
-                'X-Invoker-Origin': 'WebHook',
-            },
-        };
-
-        try {
-            const response: AxiosResponse = await axios(axiosConfig);
-        } catch (error) {
-            const { url, } = error.response?.config || {};
-            const { status } = error.response;
-            const simplifyMessage = { url, status };
-            console.error('Error forwarding request:', simplifyMessage);
-        }
+        await this.proxyHookHttp.sendRequest(arg);
     }
 
     async invokeCreate(context: ServerContext, resource: string, operation: string, after: any) {
@@ -121,11 +80,4 @@ export class WebHookService {
             after: after
         });
     }
-
-    // public static getInstance(): WebHookService {
-    //     if (!WebHookService.instance) {
-    //         WebHookService.instance = new WebHookService();
-    //     }
-    //     return WebHookService.instance;
-    // }
 }

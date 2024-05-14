@@ -11,7 +11,7 @@ export const typeDefs = `#graphql
     content: String!
     published: Boolean
 
-    mentioned: [MentionedInPostInput]
+    mentioned: MentionedInPostInput
   }
   
   input TimelineQueryInput {
@@ -43,6 +43,29 @@ export const typeDefs = `#graphql
     posts(input: BaseQueryInput): TimelinePostConnection!
   }
 
+  enum MentionableObjectType {
+    USER,
+    GROUP
+  }
+
+  type MentionableGroup {
+    userProfiles: [UserPublicInfo]
+  }
+
+  type MentionableObject {
+    userProfile: UserPublicInfo
+    groupProfile: MentionableGroup
+    mentionableObjectType: MentionableObjectType!
+  }
+
+  type PostCommentAggregatedInfo {
+    totalCount: Int!
+  }
+
+  type PostAggregatedInfo {
+    comment: PostCommentAggregatedInfo
+  }
+
   type Post {
     id: ID!
     content: String!
@@ -50,6 +73,10 @@ export const typeDefs = `#graphql
     authorInfo: UserPublicInfo!
 
     comments(input: BaseQueryInput): PostCommentConnection!
+
+    relatedMentionHistories: [MentionHistory]
+
+    aggregatedInfo: PostAggregatedInfo
   }
 
   type TrendingFeed {
@@ -64,7 +91,12 @@ export const typeDefs = `#graphql
   }
 
   input MentionedInPostInput {
-    snsNames: [String]
+    users: [MentionedUserInput]
+  }
+
+  input MentionedUserInput {
+    snsName: String!
+    friendlyName: String!
   }
 
   type Mutation {

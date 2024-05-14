@@ -31,7 +31,10 @@ export const typeDefs = `#graphql
   }
 
   type PrivateProfileInfo implements SharedPublicProfile {
+
     oauth2BindingsConnection(input: BaseQueryInput): UserOAuth2BindingConnection!
+    apiClientConnection(input: BaseQueryInput): UserAPIClientConnection!
+
     snsName: String!
     openId: String!
     friendlyName: String

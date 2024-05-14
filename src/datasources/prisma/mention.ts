@@ -10,35 +10,59 @@ export class MentionHistoryDataSource extends PrismaDataSource {
         super(config);
     }
 
-    async findAsMentioner(context: ServerContext, input: any) {
-        const currentUserId = parseInt(context.session.user.id);
-        if (!input) input = {};
-        const limit = input.limit ? input.limit : 10;
-        const skip = input.skip ? input.skip : 0;
-        const sorter = input.sorted ? input.sorted : { created: 'desc' };
-        const filters = input.filters ? input.filters : {};
-        const cursor = input.cursor ? input.cursor : null;
-        const sortedKey = Object.keys(sorter)[0];
-        const sortValue = Object.values(sorter)[0]
-        const cursorFilter = cursor != null ? sortValue === 'desc' ? { [sortedKey]: { lt: cursor } } : { [sortedKey]: { gt: cursor } } : {};
+    async findById(context: ServerContext, input: any) {
 
-        const supportedSortFields = ['updatedAt', 'id', 'created'];
-        if (!supportedSortFields.includes(sortedKey)) {
-            throw new GraphQLError(`${sortedKey} in not a one of supported sort fields.`, {
+        if (!input || !input.id) {
+            throw new GraphQLError('Invalid Id', {
                 extensions: {
                     code: GraphqlErrorCode.BAD_REQUEST,
                     name: GraphqlErrorCode[GraphqlErrorCode.BAD_REQUEST],
                 },
             });
         }
+        const mentionHistory = await this.prisma.mentionedHistory.findUnique({
+            where: {
+                id: input.id,
+            },
+        });
+        return mentionHistory;
+    }
+
+    async countAsMentioner(context: ServerContext, input: any) {
+        const currentUserId = parseInt(context.session.user.id);
+        if (!input) input = {};
+
+        const rawData = await this.prisma.$queryRaw`
+
+        SELECT COUNT(DISTINCT "mentionedUserId") AS "TotalMentionedCount"
+        FROM "MentionedHistory" mh where "mentionerUserId" = ${currentUserId}`;
+        return parseInt(rawData[0]?.TotalMentionedCount) || 0;
+    }
+
+    async findAsMentioner(context: ServerContext, input: any) {
+        const currentUserId = parseInt(context.session.user.id);
+
+        const {
+            limit,
+            skip,
+            sorter,
+            filters,
+            cursor,
+            sortedKey,
+            sortValue,
+            cursorFilter,
+            supportedSortFields,
+        } = this.prepareFilters(input);
+
         const mentionHistoryAsMentioner = await this.prisma.mentionedHistory.findMany({
+            distinct: ['mentionedUserId'],
             where: {
                 ...filters,
                 mentionerUserId: currentUserId,
             },
             ...(cursor && sortedKey && supportedSortFields.includes(sortedKey) && {
                 cursor: {
-                    createdAt: cursor
+                    id: cursor
                 }
             }),
             orderBy: sorter ? sorter : {
@@ -50,5 +74,4 @@ export class MentionHistoryDataSource extends PrismaDataSource {
 
         return mentionHistoryAsMentioner;
     }
-
 }

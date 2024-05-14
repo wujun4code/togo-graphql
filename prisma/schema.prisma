@@ -53,8 +53,51 @@ model MentionedHistory {
   mentionerUserId Int
   mentioner       User @relation("MentionerRelatedUser", fields: [mentionerUserId], references: [id])
 
-  createdAt DateTime @unique() @default(now()) @db.Timestamptz(3)
-  updatedAt DateTime @unique() @default(now()) @updatedAt @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @default(now()) @updatedAt @db.Timestamptz(3)
+
+  mentionedFriendlyName String?
+
+  relatedNotification UnreadMentionedNotification? @relation(name: "MentionedNotificationRelatedHistory")
+
+  @@index(fields: [createdAt])
+  @@index(fields: [updatedAt])
+}
+
+model UnreadMentionedNotification {
+  id Int @id @default(autoincrement())
+
+  relatedHistoryId Int              @unique()
+  relatedHistory   MentionedHistory @relation("MentionedNotificationRelatedHistory", fields: [relatedHistoryId], references: [id])
+
+  mentionedUserId Int
+  mentioned       User @relation("UnreadMentionedNotificationRelatedUser", fields: [mentionedUserId], references: [id])
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @default(now()) @updatedAt @db.Timestamptz(3)
+
+  markedReadArchived MentionedNotificationMarkedReadArchived? @relation(name: "ArchivedRelatedNotification")
+
+  @@index(fields: [createdAt])
+  @@index(fields: [updatedAt])
+  @@index(fields: [mentionedUserId])
+}
+
+model MentionedNotificationMarkedReadArchived {
+  id Int @id @default(autoincrement())
+
+  originalNotificationId Int                         @unique()
+  originalNotification   UnreadMentionedNotification @relation("ArchivedRelatedNotification", fields: [originalNotificationId], references: [id])
+
+  mentionedUserId Int
+  mentioned       User @relation("ArchivedRelatedUser", fields: [mentionedUserId], references: [id])
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @default(now()) @updatedAt @db.Timestamptz(3)
+
+  @@index(fields: [createdAt])
+  @@index(fields: [updatedAt])
+  @@index(fields: [mentionedUserId])
 }
 
 //
@@ -70,12 +113,15 @@ model Organization {
   createdById Int
   createdBy   User @relation("OrganizationCreator", fields: [createdById], references: [id])
 
-  createdAt DateTime @unique() @default(now()) @db.Timestamptz(3)
-  updatedAt DateTime @unique() @default(now()) @updatedAt @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @default(now()) @updatedAt @db.Timestamptz(3)
 
   usersWithRoles OrganizationUserRole[] @relation(name: "OrganizationOrganizationUserRole")
 
   managedRobots Robot[] @relation(name: "RobotsManagedByOrganization")
+
+  @@index(fields: [createdAt])
+  @@index(fields: [updatedAt])
 }
 
 model OrganizationUserRole {
@@ -90,8 +136,11 @@ model OrganizationUserRole {
   roleId Int
   role   Role @relation("RoleOrganizationUserRole", fields: [roleId], references: [id])
 
-  createdAt DateTime @unique() @default(now()) @db.Timestamptz(3)
-  updatedAt DateTime @unique() @default(now()) @updatedAt @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @default(now()) @updatedAt @db.Timestamptz(3)
+
+  @@index(fields: [createdAt])
+  @@index(fields: [updatedAt])
 }
 
 //
@@ -104,41 +153,18 @@ model Post {
   published Boolean  @default(false)
   authorId  Int
   author    User     @relation(fields: [authorId], references: [id])
-  postedAt  DateTime @unique() @default(now()) @db.Timestamptz(3)
-  updatedAt DateTime @unique() @updatedAt @db.Timestamptz(3)
+  postedAt  DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
 
   comments PostComment[] @relation(name: "commentsTo")
 
-  relatedMentionHistory MentionedHistory[] @relation(name: "MentionedHistoryRelatedPost")
+  relatedMentionHistory MentionedHistory[]   @relation(name: "MentionedHistoryRelatedPost")
+  Post_UserACLRule      Post_UserACLRule[]
+  Post_RoleACLRule      Post_RoleACLRule[]
+  Post_PublicACLRule    Post_PublicACLRule[]
 
-  Post_UserACLRule   Post_UserACLRule[]
-  Post_RoleACLRule   Post_RoleACLRule[]
-  Post_PublicACLRule Post_PublicACLRule[]
-}
-
-model PostComment {
-  id Int @id @default(autoincrement())
-
-  postId Int
-  post   Post @relation(name: "commentsTo", fields: [postId], references: [id], onDelete: Cascade)
-
-  content String
-
-  threadId       Int?
-  thread         PostComment?  @relation(name: "ThreadComments", fields: [threadId], references: [id], onDelete: Cascade)
-  threadComments PostComment[] @relation("ThreadComments")
-
-  replyToId       Int?
-  replyTo         PostComment?  @relation(name: "ReplyComments", fields: [replyToId], references: [id], onDelete: Cascade)
-  replyToComments PostComment[] @relation("ReplyComments")
-
-  authorId Int
-  author   User @relation(name: "comments", fields: [authorId], references: [id])
-
-  createdAt DateTime @unique() @default(now()) @db.Timestamptz(3)
-  updatedAt DateTime @unique() @updatedAt @db.Timestamptz(3)
-
-  relatedMentionHistory MentionedHistory[] @relation(name: "MentionedHistoryRelatedComment")
+  @@index(fields: [postedAt])
+  @@index(fields: [updatedAt])
 }
 
 model Post_UserACLRule {
@@ -184,6 +210,72 @@ model Post_PublicACLRule {
   @@unique([wildcard, postId], name: "unique_wildcard_post_constraint")
 }
 
+model PostComment {
+  id Int @id @default(autoincrement())
+
+  postId Int
+  post   Post @relation(name: "commentsTo", fields: [postId], references: [id], onDelete: Cascade)
+
+  content String
+
+  threadId       Int?
+  thread         PostComment?  @relation(name: "ThreadComments", fields: [threadId], references: [id], onDelete: Cascade)
+  threadComments PostComment[] @relation("ThreadComments")
+
+  replyToId       Int?
+  replyTo         PostComment?  @relation(name: "ReplyComments", fields: [replyToId], references: [id], onDelete: Cascade)
+  replyToComments PostComment[] @relation("ReplyComments")
+
+  authorId Int
+  author   User @relation(name: "comments", fields: [authorId], references: [id])
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  relatedMentionHistory MentionedHistory[] @relation(name: "MentionedHistoryRelatedComment")
+
+  relatedNotification UnreadPostCommentNotification? @relation(name: "UnreadCommentNotificationRelatedComment")
+
+  @@index(fields: [createdAt])
+  @@index(fields: [updatedAt])
+}
+
+model UnreadPostCommentNotification {
+  id Int @id @default(autoincrement())
+
+  relatedCommentId Int         @unique()
+  relatedComment   PostComment @relation("UnreadCommentNotificationRelatedComment", fields: [relatedCommentId], references: [id])
+
+  originalPosterId Int
+  originalPoster   User @relation("UnreadCommentNotificationOriginalPosterRelatedUser", fields: [originalPosterId], references: [id])
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @default(now()) @updatedAt @db.Timestamptz(3)
+
+  markedReadArchived CommentNotificationMarkedReadArchived? @relation(name: "ArchivedRelatedCommentNotification")
+
+  @@index(fields: [createdAt])
+  @@index(fields: [updatedAt])
+  @@index(fields: [originalPosterId])
+}
+
+model CommentNotificationMarkedReadArchived {
+  id Int @id @default(autoincrement())
+
+  originalNotificationId Int                           @unique()
+  originalNotification   UnreadPostCommentNotification @relation("ArchivedRelatedCommentNotification", fields: [originalNotificationId], references: [id])
+
+  originalPosterId Int
+  originalPoster   User @relation("ArchivedCommentNotificationRelatedUser", fields: [originalPosterId], references: [id])
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @default(now()) @updatedAt @db.Timestamptz(3)
+
+  @@index(fields: [createdAt])
+  @@index(fields: [updatedAt])
+  @@index(fields: [originalPosterId])
+}
+
 //
 // robot.prisma
 //
@@ -194,8 +286,8 @@ model Robot {
   hookUrl String?
   website String?
 
-  createdAt DateTime @unique() @default(now()) @db.Timestamptz(3)
-  updatedAt DateTime @unique() @default(now()) @updatedAt @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @default(now()) @updatedAt @db.Timestamptz(3)
 
   headers RobotHookHeader[]
 
@@ -207,6 +299,9 @@ model Robot {
 
   relatedUserId Int  @unique()
   relatedUser   User @relation("RobotRelatedUser", fields: [relatedUserId], references: [id])
+
+  @@index(fields: [createdAt])
+  @@index(fields: [updatedAt])
 }
 
 model RobotHookHeader {
@@ -218,8 +313,12 @@ model RobotHookHeader {
   key   String
   value String
 
-  createdAt DateTime @unique() @default(now()) @db.Timestamptz(3)
-  updatedAt DateTime @unique() @default(now()) @updatedAt @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @default(now()) @updatedAt @db.Timestamptz(3)
+
+  @@unique([robotId, key], name: "unique_robot_key_constraint")
+  @@index(fields: [createdAt])
+  @@index(fields: [updatedAt])
 }
 
 //
@@ -328,8 +427,8 @@ model User {
 
   oauth2Bindings User_OAuth2[] @relation(name: "OAuth2_Binding")
 
-  createdAt DateTime @unique() @default(now()) @db.Timestamptz(3)
-  updatedAt DateTime @unique() @default(now()) @updatedAt @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @default(now()) @updatedAt @db.Timestamptz(3)
 
   createdComments PostComment[] @relation(name: "comments")
 
@@ -347,9 +446,20 @@ model User {
 
   asMentioned MentionedHistory[] @relation(name: "MentionedRelatedUser")
 
-  asMentioner            MentionedHistory[]       @relation(name: "MentionerRelatedUser")
-  Post_UserACLRule       Post_UserACLRule[]
-  TravelPlan_UserACLRule TravelPlan_UserACLRule[]
+  asMentioner MentionedHistory[] @relation(name: "MentionerRelatedUser")
+
+  unreadMentionedNotification   UnreadMentionedNotification[]             @relation(name: "UnreadMentionedNotificationRelatedUser")
+  archivedMentionedNotification MentionedNotificationMarkedReadArchived[] @relation(name: "ArchivedRelatedUser")
+
+  authorizedClients UserAPIClient[] @relation(name: "apiClientBindingUser")
+
+  unreadPostCommentNotification   UnreadPostCommentNotification[]         @relation(name: "UnreadCommentNotificationOriginalPosterRelatedUser")
+  archivedPostCommentNotification CommentNotificationMarkedReadArchived[] @relation(name: "ArchivedCommentNotificationRelatedUser")
+  Post_UserACLRule                Post_UserACLRule[]
+  TravelPlan_UserACLRule          TravelPlan_UserACLRule[]
+
+  @@index(fields: [createdAt])
+  @@index(fields: [updatedAt])
 }
 
 model OAuth2 {
@@ -378,10 +488,12 @@ model User_OAuth2 {
   site   String?
   bio    String?
 
-  createdAt DateTime @unique() @default(now()) @db.Timestamptz(3)
-  updatedAt DateTime @unique() @default(now()) @updatedAt @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @default(now()) @updatedAt @db.Timestamptz(3)
 
   @@unique([oauth2Id, userId, openId], name: "unique_provider_userId_clientId")
+  @@index(fields: [createdAt])
+  @@index(fields: [updatedAt])
 }
 
 model Role {
@@ -402,10 +514,29 @@ model RoleUser {
   user   User @relation(fields: [userId], references: [id])
   role   Role @relation(fields: [roleId], references: [id])
 
-  createdAt DateTime @unique() @default(now()) @db.Timestamptz(3)
-  updatedAt DateTime @unique() @default(now()) @updatedAt @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @default(now()) @updatedAt @db.Timestamptz(3)
 
   @@index([roleId, userId], name: "unique_user_role")
+  @@index(fields: [createdAt])
+  @@index(fields: [updatedAt])
+}
+
+model UserAPIClient {
+  id          Int     @id @default(autoincrement())
+  name        String
+  description String?
+  apiId       String  @default(uuid())
+  apiKey      String  @default(cuid())
+
+  bindingUserId Int
+  bindingUser   User @relation("apiClientBindingUser", fields: [bindingUserId], references: [id])
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @default(now()) @updatedAt @db.Timestamptz(3)
+
+  @@index(fields: [createdAt])
+  @@index(fields: [updatedAt])
 }
 
 //

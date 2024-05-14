@@ -2,7 +2,8 @@ import jsonwebtoken from 'jsonwebtoken';
 import { IOAuth2BasicInfo, IOAuth2ExtraProfile, OAuthUserInfo } from '../contracts/context.js';
 import { GraphqlErrorCode } from '../contracts/index.js';
 import { GraphQLError } from 'graphql';
-
+import { PrismaClient } from '@prisma/client';
+import { ExtendedUserInterface, SessionContext } from '../contracts/index.js';
 
 export const generateJWTToken = async (payload: any) => {
     if (!process.env.JWT_PRIVATE_KEY) throw new Error('no private key provided.');
@@ -43,6 +44,57 @@ export class UserTokenService {
     }
 }
 
+export class APIClientOAuth2Provider implements IOAuth2Provider {
+
+    session: SessionContext;
+    prisma: PrismaClient;
+
+    constructor(config: { client: PrismaClient, session: SessionContext }) {
+        this.prisma = config.client;
+        this.session = config.session;
+    }
+
+    getProfile = async (input: UserTokenServiceInput): Promise<OAuthUserInfo> => {
+        const apiClient = await this.prisma.userAPIClient.findFirst({
+            where: {
+                apiId: input.clientId,
+                apiKey: input.accessToken,
+            },
+            select: {
+                id: true,
+                bindingUser: true
+            }
+        });
+
+        if (!apiClient) {
+            throw new GraphQLError(`api id and api key are not matched.`, {
+                extensions: {
+                    code: GraphqlErrorCode.UNAUTHORIZED,
+                    name: GraphqlErrorCode[GraphqlErrorCode.UNAUTHORIZED],
+                },
+            });
+        }
+
+        const { bindingUser: user } = apiClient;
+
+        const basic = {
+            sub: user.openId,
+            username: user.username,
+            email: user.email,
+            provider: input.provider,
+            clientId: input.clientId,
+            friendlyName: user.friendlyName,
+        };
+
+        const extra = {
+            avatar: user.avatar,
+            bio: user.bio,
+        };
+
+        return { basic, extra };
+    }
+}
+
 export class GitHubOAuth2Provider implements IOAuth2Provider {
     getProfile = async (input: UserTokenServiceInput): Promise<OAuthUserInfo> => {
         const profileResponse = await fetch("https://api.github.com/user", {
@@ -68,8 +120,6 @@ export class GitHubOAuth2Provider implements IOAuth2Provider {
                 Authorization: `Bearer ${input.accessToken}`,
             },
         });
-
-        console.log(`profile:${JSON.stringify(profile)}`);
 
         if (emailResponse.status != 200) {
             if (emailResponse.status === 401)

@@ -7,7 +7,7 @@ export const resolvers = {
     Query: {
         followRelation: async (parent, args, context, info) => {
             if (!args.input.originalSnsName || !args.input.targetSnsName)
-                throw new GraphQLError(`no user found`, {
+                throw new GraphQLError(`no snsName provided`, {
                     extensions: {
                         code: GraphqlErrorCode.BAD_REQUEST,
                         name: GraphqlErrorCode[GraphqlErrorCode.BAD_REQUEST],
@@ -15,6 +15,15 @@ export const resolvers = {
                 });
             const originalUser = await context.dataSources.user.getUniqueUser(context, { snsName: args.input.originalSnsName });
             const targetUser = await context.dataSources.user.getUniqueUser(context, { snsName: args.input.targetSnsName });
+            
+            if (!targetUser) {
+                throw new GraphQLError(`no matching user found with snsName is ${args.input.targetSnsName}`, {
+                    extensions: {
+                        code: GraphqlErrorCode.BAD_REQUEST,
+                        name: GraphqlErrorCode[GraphqlErrorCode.BAD_REQUEST],
+                    },
+                });
+            }
             const data = { originalUser, targetUser };
             return data;
         },

@@ -11,17 +11,17 @@ export const resolvers = {
             } = context;
             return await context.dataSources.user.getMyProfileByUserId(context, { userId: parseInt(user.id) });
         }),
-        authentication: async (parent, args, context, info) => {
-            const { basic, extra } = await context.services.jwt.getProfile(args.input);
-            const jwt = await context.services.jwt.getJwt(basic);
-            return { jwt, basic, extra };
-        },
-    },
-    Authentication: {
-        profile: async (parent, args, context, info) => {
-            const { basic, extra } = parent;
-            const { id } = await context.dataSources.user.createOrGetUser(context, { basic, extra });
-            return await context.dataSources.user.getMyProfileByUserId(context, { userId: id });
+        batchPublicProfiles: async (parent, args, context, info) => {
+            const { input } = args;
+
+            const list = await Promise.all(
+                input.map(async (profileInput) => {
+                    // 调用 publicProfile 逻辑，并返回结果
+                    return await resolvers.Query.publicProfile(parent, { input: profileInput }, context, info);
+                })
+            );
+
+            return list;
         },
     },
     PrivateProfileInfo: {
@@ -40,6 +40,25 @@ export const resolvers = {
                     endCursor: oauth2Bindings.length > 0 ? oauth2Bindings[oauth2Bindings.length - 1].updatedAt : ''
                 },
                 totalCount: _count.oauth2Bindings
+            };
+
+            return result;
+        }),
+        apiClientConnection: withAuthentication(async (parent, args, context, info) => {
+            const { authorizedClients, _count } = await context.dataSources.user.getAPIClients(context, {
+                ...args.input,
+                userId: parseInt(parent.id)
+            });
+
+            const result = {
+                edges: authorizedClients.map(n => {
+                    return { cursor: n.updatedAt, node: n };
+                }),
+                pageInfo: {
+                    hasNextPage: false,
+                    endCursor: authorizedClients.length > 0 ? authorizedClients[authorizedClients.length - 1].updatedAt : ''
+                },
+                totalCount: _count.authorizedClients
             };
 
             return result;

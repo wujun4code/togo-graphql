@@ -5,7 +5,9 @@ import { SessionContext, ServerContext } from '../contracts/index.js';
 import { PrismaClient } from '@prisma/client';
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { Request, Response } from 'express';
-import { MentionHistorySubWorker } from '@services/mention/sub.js';
+import { MentionHistorySubWorker, PostCreatedSubWorker, MentionedSubWorker, CommentCreatedSubWorker } from '../services/index.js';
+import { PubSub } from 'graphql-subscriptions';
+import { ProxyHookHttp } from './hook/proxy.http.js';
 
 export interface SubscriptionMap {
     [key: string]: boolean;
@@ -13,18 +15,27 @@ export interface SubscriptionMap {
 
 export interface SubWorker {
     start(): void;
+    stop(): void;
 }
 
 export class PubSubService extends EventEmitter {
-    private static instance: PubSubService;
     private subscriptions: SubscriptionMap = {};
     prisma: PrismaClient;
     session: SessionContext;
+    gqlPubSub: PubSub;
+    proxyHookHttp: ProxyHookHttp;
 
-    constructor(config: { prisma: PrismaClient, session: SessionContext }) {
+    constructor(config: {
+        prisma: PrismaClient,
+        session: SessionContext,
+        gqlPubSub: PubSub,
+        proxyHookHttp: ProxyHookHttp
+    }) {
         super();
         this.prisma = config.prisma;
         this.session = config.session;
+        this.gqlPubSub = config.gqlPubSub;
+        this.proxyHookHttp = config.proxyHookHttp;
     }
 
     public publish(topic: string, event: string, payload: any) {
@@ -74,13 +85,6 @@ export class PubSubService extends EventEmitter {
     // }
 }
 
-// export const pubSubService = PubSubService.getInstance();
-
-// pubSubService.subscribe('mentioned', 'created', (payload) => {
-
-//     console.log(`payload:${JSON.stringify(payload)}`);
-// });
-
 export class PubSubManager {
     protected pubSub: PubSubService;
     protected subWorkers: SubWorker[];
@@ -97,6 +101,13 @@ export class PubSubManager {
     startAllSubWorkers() {
         this.subWorkers.forEach(subWorker => subWorker.start());
     }
+
+    unsubscribeAll() {
+        this.subWorkers.forEach(subscription => {
+            subscription.stop();
+        });
+        this.subWorkers = [];
+    }
 }
 
 export class BuiltInPubSubManager extends PubSubManager {
@@ -107,6 +118,12 @@ export class BuiltInPubSubManager extends PubSubManager {
 
     private addDefaultSubWorkers() {
         const mentionHistorySubWorker = new MentionHistorySubWorker({ pubSub: this.pubSub });
+        const postSubWorker = new PostCreatedSubWorker({ pubSub: this.pubSub });
+        const mentionedSubWorker = new MentionedSubWorker({ pubSub: this.pubSub });
+        const commentSubWorker = new CommentCreatedSubWorker({ pubSub: this.pubSub });
         this.addSubWorker(mentionHistorySubWorker);
+        this.addSubWorker(postSubWorker);
+        this.addSubWorker(mentionedSubWorker);
+        this.addSubWorker(commentSubWorker);
     }
 }

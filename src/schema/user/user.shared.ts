@@ -33,6 +33,7 @@ export const typeDefs = `#graphql
 
   input SharedPublicProfileInput {
     snsName: String
+    openId: String
   }
 
   type PublicProfilePostConnection {
@@ -60,6 +61,7 @@ export const typeDefs = `#graphql
 
   type Query {
     publicProfile(input: SharedPublicProfileInput!): SharedPublicProfileInfo
+    batchPublicProfiles(input: [SharedPublicProfileInput!]!): [SharedPublicProfileInfo!]
   }
 
 `

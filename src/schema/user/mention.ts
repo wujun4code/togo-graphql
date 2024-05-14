@@ -5,6 +5,7 @@ export const typeDefs = `#graphql
     relatedPost: Post
     mentioner: SharedPublicProfileInfo!
     mentioned: SharedPublicProfileInfo!
+    mentionedFriendlyName: String
   }
 
   type MentionHistoryEdge {
@@ -18,7 +19,7 @@ export const typeDefs = `#graphql
     pageInfo: PageInfo!
   }
 
-  type SuggestingToType {
+  type SuggestingToMention {
     asMentioner(input: BaseQueryInput): MentionerMentionHistoryConnection!
   }
 
@@ -27,6 +28,6 @@ export const typeDefs = `#graphql
   }
 
   type Query {
-    suggestingToType(input: SuggestedTypingInput!): SuggestingToType
+    suggestingToMention(input: SuggestedTypingInput): SuggestingToMention
   }
 `

@@ -163,29 +163,71 @@ export class UserDataSource extends PrismaDataSource {
         return data;
     }
 
+    async getAPIClients(context: ServerContext, input: any) {
+        const { userId } = input;
+
+        const {
+            limit,
+            skip,
+            sorter,
+            filters,
+            cursor,
+            sortedKey,
+            sortValue,
+            cursorFilter,
+            supportedSortFields,
+        } = this.prepareFilters(input);
+
+        const authorizedClients = await this.prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                _count: {
+                    select: { authorizedClients: true, },
+                },
+                authorizedClients: {
+                    where: {
+                        ...filters,
+                        ...cursorFilter,
+                    },
+                    orderBy: sorter ? sorter : {
+                        updatedAt: 'desc',
+                    },
+                    take: limit,
+                    ...(cursor && sortedKey && supportedSortFields.includes(sortedKey) && {
+                        cursor: {
+                            id: cursor
+                        }
+                    }),
+                    skip: skip,
+                    select: {
+                        id: true,
+                        name: true,
+                        description: true,
+                        apiId: true,
+                        apiKey: true,
+                        createdAt: true,
+                        updatedAt: true,
+                    }
+                },
+            },
+        });
+        return authorizedClients;
+    }
+
     async getOAuth2Bindings(context: ServerContext, input: any) {
         const { userId } = input;
 
-        if (!input) input = {};
-
-        const limit = input.limit ? input.limit : 10;
-        const skip = input.skip ? input.skip : 0;
-        const sorter = input.sorted ? input.sorted : { updatedAt: 'desc' };
-        const filters = input.filters ? input.filters : {};
-        const cursor = input.cursor ? input.cursor : null;
-        const sortedKey = Object.keys(sorter)[0];
-        const sortValue = Object.values(sorter)[0]
-        const cursorFilter = cursor != null ? sortValue === 'desc' ? { [sortedKey]: { lt: cursor } } : { [sortedKey]: { gt: cursor } } : {};
-
-        const supportedSortFields = ['updatedAt', 'id', 'createdAt'];
-        if (!supportedSortFields.includes(sortedKey)) {
-            throw new GraphQLError(`${sortedKey} in not a one of supported sort fields.`, {
-                extensions: {
-                    code: GraphqlErrorCode.BAD_REQUEST,
-                    name: GraphqlErrorCode[GraphqlErrorCode.BAD_REQUEST],
-                },
-            });
-        }
+        const {
+            limit,
+            skip,
+            sorter,
+            filters,
+            cursor,
+            sortedKey,
+            sortValue,
+            cursorFilter,
+            supportedSortFields,
+        } = this.prepareFilters(input);
 
         const oAuth2Bindings = await this.prisma.user.findUnique({
             where: { id: userId },
@@ -204,7 +246,7 @@ export class UserDataSource extends PrismaDataSource {
                     take: limit,
                     ...(cursor && sortedKey && supportedSortFields.includes(sortedKey) && {
                         cursor: {
-                            updatedAt: cursor
+                            id: cursor
                         }
                     }),
                     skip: skip,
@@ -227,9 +269,74 @@ export class UserDataSource extends PrismaDataSource {
         return await this.getMyProfileByUserId(context, { userId: userId });
     }
 
-    async getSharedPublicProfile(context: ServerContext, input: any) {
+    async findManySharedPublicProfileInUserIds(context: ServerContext, input: any) {
+        const { userIds } = input;
 
+        const sharedPublicInfos = await this.prisma.user.findMany({
+            where: { id: { in: userIds } },
+            select: {
+                _count: {
+                    select: { asFollowees: true, asFollowers: true, oauth2Bindings: true }
+                },
+                id: true,
+                snsName: true,
+                friendlyName: true,
+                createdAt: true,
+                updatedAt: true,
+                openId: true,
+                avatar: true,
+                bio: true
+            },
+        });
+
+        const data = sharedPublicInfos.map((sharedPublicInfo, index) => ({
+            id: sharedPublicInfo.id,
+            openId: sharedPublicInfo.openId,
+            snsName: sharedPublicInfo.snsName,
+            friendlyName: sharedPublicInfo.friendlyName,
+            createdAt: sharedPublicInfo.createdAt,
+            updatedAt: sharedPublicInfo.updatedAt,
+            following: { totalCount: sharedPublicInfo._count.asFollowers },
+            follower: { totalCount: sharedPublicInfo._count.asFollowees },
+            avatar: sharedPublicInfo.avatar,
+            bio: sharedPublicInfo.bio,
+        }));
+
+        return data;
+    }
+
+    async getSharedPublicProfile(context: ServerContext, input: any) {
+        const user = await this.getUniqueUser(context, input);
+        if (!user) {
+            throw new GraphQLError(`no snsName or openId found for ${input.snsName}`, {
+                extensions: {
+                    code: GraphqlErrorCode.BAD_REQUEST,
+                    name: GraphqlErrorCode[GraphqlErrorCode.BAD_REQUEST],
+                },
+            });
+        }
         const { id } = await this.getUniqueUser(context, input);
         return this.getSharedPublicProfileByUserId(context, id);
+    }
+
+    async createAPIClient(context: ServerContext, input: any) {
+        const { name, description, userId } = input;
+        if (!name) {
+            throw new GraphQLError(`name is required`, {
+                extensions: {
+                    code: GraphqlErrorCode.BAD_REQUEST,
+                    name: GraphqlErrorCode[GraphqlErrorCode.BAD_REQUEST],
+                },
+            });
+        }
+
+        const apiClient = await this.prisma.userAPIClient.create({
+            data: {
+                name,
+                description,
+                bindingUserId: userId,
+            },
+        });
+        return apiClient;
     }
 }

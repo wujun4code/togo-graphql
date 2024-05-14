@@ -25,27 +25,38 @@ model User {
 
   oauth2Bindings    User_OAuth2[] @relation(name: "OAuth2_Binding")
 
-  createdAt         DateTime @unique() @default(now()) @db.Timestamptz(3)
-  updatedAt         DateTime @unique() @default(now()) @updatedAt @db.Timestamptz(3)
+  createdAt         DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime  @default(now()) @updatedAt @db.Timestamptz(3)
 
   createdComments   PostComment[]  @relation(name:"comments")
 
   userType          UserType       @default(HUMAN)
 
 
-  relatedOrganization      Organization?            @relation(name:"OrganizationRelatedUser")
+  relatedOrganization                 Organization?                                          @relation(name:"OrganizationRelatedUser")
 
-  createdOrganizations     Organization[]           @relation(name:"OrganizationCreator")
+  createdOrganizations                Organization[]                                         @relation(name:"OrganizationCreator")
 
-  rolesInOrganization      OrganizationUserRole[]   @relation(name:"UserOrganizationUserRole")
+  rolesInOrganization                 OrganizationUserRole[]                                 @relation(name:"UserOrganizationUserRole")
 
-  managedRobots     Robot[]                         @relation(name:"RobotsBelongsToUser")
+  managedRobots                       Robot[]                                                @relation(name:"RobotsBelongsToUser")
 
-  relatedRobot      Robot?                          @relation(name:"RobotRelatedUser")
+  relatedRobot                        Robot?                                                 @relation(name:"RobotRelatedUser")
 
-  asMentioned       MentionedHistory[]              @relation(name:"MentionedRelatedUser")
+  asMentioned                             MentionedHistory[]                                     @relation(name:"MentionedRelatedUser")
 
-  asMentioner       MentionedHistory[]              @relation(name:"MentionerRelatedUser")
+  asMentioner                             MentionedHistory[]                                     @relation(name:"MentionerRelatedUser")
+
+  unreadMentionedNotification             UnreadMentionedNotification[]                          @relation(name:"UnreadMentionedNotificationRelatedUser")
+  archivedMentionedNotification           MentionedNotificationMarkedReadArchived[]              @relation(name:"ArchivedRelatedUser")
+
+  authorizedClients                       UserAPIClient[]                                        @relation(name:"apiClientBindingUser")
+
+  unreadPostCommentNotification           UnreadPostCommentNotification[]                        @relation(name:"UnreadCommentNotificationOriginalPosterRelatedUser")
+  archivedPostCommentNotification         CommentNotificationMarkedReadArchived[]                @relation(name:"ArchivedCommentNotificationRelatedUser")
+
+  @@index(fields:[createdAt])
+  @@index(fields:[updatedAt])    
 }
 
 model OAuth2 {
@@ -74,10 +85,13 @@ model User_OAuth2 {
   site              String?
   bio               String?
 
-  createdAt         DateTime @unique() @default(now()) @db.Timestamptz(3)
-  updatedAt         DateTime @unique() @default(now()) @updatedAt @db.Timestamptz(3)
+  createdAt         DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime   @default(now()) @updatedAt @db.Timestamptz(3)
 
   @@unique([oauth2Id, userId, openId], name: "unique_provider_userId_clientId")
+
+  @@index(fields:[createdAt])
+  @@index(fields:[updatedAt])    
 }
 
 model Role {
@@ -96,8 +110,28 @@ model RoleUser {
   user   User @relation(fields: [userId], references: [id])
   role   Role @relation(fields: [roleId], references: [id])
   
-  createdAt         DateTime @unique() @default(now()) @db.Timestamptz(3)
-  updatedAt         DateTime @unique() @default(now()) @updatedAt @db.Timestamptz(3)
+  createdAt         DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime   @default(now()) @updatedAt @db.Timestamptz(3)
 
   @@index([roleId, userId], name: "unique_user_role")
+
+  @@index(fields:[createdAt])
+  @@index(fields:[updatedAt])    
+}
+
+model UserAPIClient {
+  id                        Int                     @id @default(autoincrement())
+  name                      String                  
+  description               String?                 
+  apiId                     String                  @default(uuid())
+  apiKey                    String                  @default(cuid())
+
+  bindingUserId             Int
+  bindingUser               User                    @relation("apiClientBindingUser",fields: [bindingUserId], references: [id])
+
+  createdAt         DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime  @default(now()) @updatedAt @db.Timestamptz(3)
+
+  @@index(fields:[createdAt])
+  @@index(fields:[updatedAt])    
 }

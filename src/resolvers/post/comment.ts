@@ -15,5 +15,8 @@ export const resolvers = {
                 return await context.dataSources.user.getPublicInfo(context, parent.authorId);
             else return await context.dataSources.user.getSharedPublicProfileByUserId(context, parent.authorId);
         },
+        post: async (parent, args, context, info) => {
+            return await context.dataSources.post.getPost(context, { id: parent.postId });
+        }
     },
 };

@@ -14,6 +14,9 @@ import { typeDefs as Comment } from './post/comment.js';
 import { typeDefs as Token } from './user/token.js';
 import { typeDefs as Robot } from './robot/robot.js';
 import { typeDefs as Mention } from './user/mention.js';
+import { typeDefs as SubscriptionMentioned } from './notification/mentioned.js';
+import { typeDefs as UnreadNotification } from './notification/unread.js';
+import { typeDefs as SubscriptionComment } from './notification/comment.js';
 
 export const cacheDefs = `#graphql
 enum CacheControlScope {
@@ -34,4 +37,6 @@ export const typeDefs = [
   AirNow, TravelPlan,
   Webhook, Post, Comment,
   UserShared, User, Token,
-  Follow, Robot, Mention];
+  Follow, Robot, Mention,
+  SubscriptionMentioned, UnreadNotification,
+  SubscriptionComment];

@@ -35,7 +35,10 @@ export class PostDataSource extends PrismaDataSource {
             });
         }
 
-        const post = await this.prisma.post.findUnique({ where: { id: id } });
+        const post = await this.prisma.post.findUnique(
+            {
+                where: { id: id },
+            });
 
         return post;
     }
@@ -66,7 +69,7 @@ export class PostDataSource extends PrismaDataSource {
             },
             ...(cursor && sortedKey && supportedSortFields.includes(sortedKey) && {
                 cursor: {
-                    postedAt: cursor
+                    id: cursor
                 }
             }),
             orderBy: sorter ? sorter : {
@@ -115,7 +118,7 @@ export class PostDataSource extends PrismaDataSource {
             },
             ...(cursor && sortedKey && supportedSortFields.includes(sortedKey) && {
                 cursor: {
-                    postedAt: cursor
+                    id: cursor
                 }
             }),
             orderBy: sorter ? sorter : {
@@ -171,7 +174,7 @@ export class PostDataSource extends PrismaDataSource {
             },
             ...(cursor && sortedKey && supportedSortFields.includes(sortedKey) && {
                 cursor: {
-                    postedAt: cursor
+                    id: cursor
                 }
             }),
             orderBy: sorter ? sorter : {
@@ -237,9 +240,11 @@ export class PostDataSource extends PrismaDataSource {
 
         webHook.invokeCreate(context, resourceName, 'create', created);
 
-        if (Array.isArray(mentioned) && mentioned.length > 0) {
-            pubSub.publish('mentioned', 'created', { post: created, mentioned: mentioned });
-        }
+        pubSub.publish('post', 'created', { post: created });
+
+        // if (Array.isArray(mentioned?.users) && mentioned?.users.length > 0) {
+        //     pubSub.publish('mentioned', 'created', { post: created, mentioned: mentioned });
+        // }
 
         return created;
     }
@@ -338,6 +343,45 @@ export class PostDataSource extends PrismaDataSource {
         return item;
     }
 
+    async findManyMentionHistory(context: ServerContext, input: any) {
+        if (!input) input = {};
+
+        const postId = input.postId;
+
+        const data = await this.prisma.post.findUnique({
+            where: { id: postId },
+            select: {
+                relatedMentionHistory: true
+            },
+        });
+        return data;
+    }
+
+    async countComments(context: ServerContext, input: any) {
+
+        const {
+            limit,
+            skip,
+            sorter,
+            filters,
+            cursor,
+            sortedKey,
+            sortValue,
+            cursorFilter,
+            supportedSortFields,
+        } = this.prepareFilters(input);
+
+        const postId = input.postId;
+        const totalCount = await this.prisma.postComment.count({
+            where: {
+                postId: postId,
+                ...filters,
+            }
+        });
+
+        return parseInt(totalCount.toString()) || 0;
+    }
+
     async findRootComments(context: ServerContext, input: any) {
         if (!input) input = {};
 
@@ -379,7 +423,7 @@ export class PostDataSource extends PrismaDataSource {
             },
             ...(cursor && sortedKey && supportedSortFields.includes(sortedKey) && {
                 cursor: {
-                    createdAt: cursor
+                    id: cursor
                 }
             }),
             orderBy: sorter ? sorter : {
@@ -414,7 +458,7 @@ export class PostDataSource extends PrismaDataSource {
 
         const { postId, replyToId, threadId, content } = input;
 
-        const { services: { webHook }, dataSources: { acl }, session: { user } } = context;
+        const { services: { webHook, pubSub }, dataSources: { acl }, session: { user } } = context;
 
         const created = await this.prisma.postComment.create({
             data: {
@@ -449,6 +493,8 @@ export class PostDataSource extends PrismaDataSource {
                 content: content,
             }
         });
+
+        pubSub.publish('comment', 'created', { comment: created });
 
         return created;
     }

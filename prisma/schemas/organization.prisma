@@ -9,12 +9,15 @@ model Organization {
   createdById       Int
   createdBy         User                @relation("OrganizationCreator", fields: [createdById], references: [id])
 
-  createdAt         DateTime @unique()  @default(now()) @db.Timestamptz(3)
-  updatedAt         DateTime @unique()  @default(now()) @updatedAt @db.Timestamptz(3)
+  createdAt         DateTime            @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime            @default(now()) @updatedAt @db.Timestamptz(3)
 
   usersWithRoles    OrganizationUserRole[]  @relation(name:"OrganizationOrganizationUserRole")
 
   managedRobots     Robot[]             @relation(name:"RobotsManagedByOrganization")
+
+  @@index(fields:[createdAt])
+  @@index(fields:[updatedAt])  
 }
 
 model OrganizationUserRole {
@@ -29,6 +32,9 @@ model OrganizationUserRole {
   roleId            Int
   role              Role                @relation("RoleOrganizationUserRole",fields: [roleId], references: [id])
 
-  createdAt         DateTime @unique()  @default(now()) @db.Timestamptz(3)
-  updatedAt         DateTime @unique()  @default(now()) @updatedAt @db.Timestamptz(3)
+  createdAt         DateTime            @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime            @default(now()) @updatedAt @db.Timestamptz(3)
+  
+  @@index(fields:[createdAt])
+  @@index(fields:[updatedAt])    
 }

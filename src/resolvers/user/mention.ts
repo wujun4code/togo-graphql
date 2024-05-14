@@ -5,23 +5,35 @@ import { GraphqlErrorCode } from '../../contracts/index.js';
 
 export const resolvers = {
     Query: {
-        suggestingToType: withAuthentication(async (parent, args, context, info) => {
+        suggestingToMention: withAuthentication(async (parent, args, context, info) => {
+            return {};
+        }),
+    },
+    SuggestingToMention: {
+        asMentioner: withAuthentication(async (parent, args, context, info) => {
 
-            const list = await context.dataSources.mention.findAsMentioner(context, args.input);
+            const list = await context.dataSources.mentionHistory.findAsMentioner(context, args.input);
 
             const connection = {
                 edges: list.map(n => {
-                    return { cursor: n.created, node: n };
+                    return { cursor: n.id, node: n };
                 }),
                 pageInfo: {
                     hasNextPage: false,
-                    endCursor: list.length > 0 ? list[list.length - 1].created : ''
+                    endCursor: list.length > 0 ? list[list.length - 1].id : ''
                 },
-                totalCount: 0,
+                //totalCount: 0,
             };
 
-            return connection;
+            return { ...connection, input: args.input };
         }),
+    },
+    MentionerMentionHistoryConnection: {
+        totalCount: async (parent, args, context, info) => {
+
+            const count = await context.dataSources.mentionHistory.countAsMentioner(context, parent.input);
+            return count;
+        },
     },
     MentionHistory: {
         relatedComment: async (parent, args, context, info) => {

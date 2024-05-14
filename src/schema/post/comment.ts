@@ -7,6 +7,8 @@ export const typeDefs = `#graphql
     updatedAt: String!
 
     authorInfo: UserPublicInfo!
+
+    post: Post!
   }
 
   type CommentEdge {
