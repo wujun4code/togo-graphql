@@ -1,0 +1,64 @@
+import { User } from "./user-role"
+import { Post, PostComment } from "./user-role"
+
+model MentionedHistory {
+  id                   Int                 @id @default(autoincrement())
+  
+  relatedPostId        Int?                 
+  relatedPost          Post?               @relation("MentionedHistoryRelatedPost",fields: [relatedPostId], references: [id])
+
+  relatedCommentId     Int?                 
+  relatedComment       PostComment?        @relation("MentionedHistoryRelatedComment", fields: [relatedCommentId], references: [id])
+
+  mentionedUserId      Int                 
+  mentioned            User                @relation("MentionedRelatedUser", fields: [mentionedUserId], references: [id])
+
+  mentionerUserId      Int                 
+  mentioner            User                @relation("MentionerRelatedUser", fields: [mentionerUserId], references: [id]) 
+
+  createdAt            DateTime            @default(now()) @db.Timestamptz(3)
+  updatedAt            DateTime            @default(now()) @updatedAt @db.Timestamptz(3)
+
+  mentionedFriendlyName   String?          
+
+  @@index(fields:[createdAt])
+  @@index(fields:[updatedAt])
+
+  relatedNotification  UnreadMentionedNotification?   @relation(name:"MentionedNotificationRelatedHistory")
+}
+
+model UnreadMentionedNotification {
+  id                   Int                 @id @default(autoincrement())
+  
+  relatedHistoryId     Int                 @unique()
+  relatedHistory       MentionedHistory    @relation("MentionedNotificationRelatedHistory", fields: [relatedHistoryId], references: [id])
+
+  mentionedUserId      Int                 
+  mentioned            User                @relation("UnreadMentionedNotificationRelatedUser", fields: [mentionedUserId], references: [id])
+
+  createdAt            DateTime            @default(now()) @db.Timestamptz(3)
+  updatedAt            DateTime            @default(now()) @updatedAt @db.Timestamptz(3)       
+
+  @@index(fields:[createdAt])
+  @@index(fields:[updatedAt])  
+  @@index(fields:[mentionedUserId])
+
+  markedReadArchived  MentionedNotificationMarkedReadArchived?  @relation(name:"ArchivedRelatedNotification")
+}
+
+model MentionedNotificationMarkedReadArchived {
+  id                           Int                            @id @default(autoincrement())
+  
+  originalNotificationId       Int                            @unique()
+  originalNotification         UnreadMentionedNotification    @relation("ArchivedRelatedNotification",fields: [originalNotificationId], references: [id])
+
+  mentionedUserId      Int                 
+  mentioned            User                @relation("ArchivedRelatedUser",fields: [mentionedUserId], references: [id])
+
+  createdAt            DateTime            @default(now()) @db.Timestamptz(3)
+  updatedAt            DateTime            @default(now()) @updatedAt @db.Timestamptz(3)       
+
+  @@index(fields:[createdAt])
+  @@index(fields:[updatedAt])  
+  @@index(fields:[mentionedUserId])
+}

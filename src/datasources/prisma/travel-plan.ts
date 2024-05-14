@@ -73,7 +73,30 @@ export class TravelPlanDataSource extends PrismaDataSource {
             }
         };
 
-        await acl.addACLRules(this.prisma.travelPlanACLRule, aclRules, 'travelPlan', 'travelPlanId', created.id);
+        //await acl.addACLRules(this.prisma.travelPlanACLRule, aclRules, 'travelPlan', 'travelPlanId', created.id);
+
+        await acl.addACLRulesX(aclRules, {
+            wildcard: {
+                publicACLRuleTable: this.prisma.travelPlan_PublicACLRule,
+                wildcardField: 'wildcard',
+                wildcardFieldValue: "*",
+                resourceIdField: 'travelPlanId',
+                resourceId: created.id
+            },
+            userInput: {
+                userACLRuleTable: this.prisma.travelPlan_UserACLRule,
+                resourceIdField: 'travelPlanId',
+                resourceId: created.id,
+                userIdField: 'userId',
+            },
+            roleInput: {
+                roleACLRuleTable: this.prisma.travelPlan_RoleACLRule,
+                resourceField: 'travelPlan',
+                resourceIdField: 'travelPlanId',
+                resourceId: created.id,
+                roleIdField: 'roleId',
+            }
+        })
 
         webHook.invokeCreate(context, resourceName, 'create', created);
 
@@ -84,7 +107,21 @@ export class TravelPlanDataSource extends PrismaDataSource {
     async deleteMany(context: ServerContext, filters: any) {
         const { services: { webHook }, dataSources: { acl }, session: { user } } = context;
         try {
-            const aclWhere = acl.createDeleteFilters(filters, 'aclRules', user, 'writePermission');
+            const aclWhere = acl.createDeleteFiltersX(filters, user, 'writePermission', {
+                publicRuleRelation: {
+                    publicACLRuleField: "aclPublicRules",
+                    wildcardField: "wildcard",
+                    wildcardFieldValue: "*",
+                },
+                userRuleRelation: {
+                    userACLRuleField: "aclUserRules",
+                    userIdField: "userId",
+                },
+                roleRuleRelation: {
+                    roleACLRuleField: "aclRolesRules",
+                    roleIdField: "roleId",
+                }
+            });
             const deletedRecords = await this.prisma.travelPlan.deleteMany({
                 where: aclWhere,
             });
@@ -105,7 +142,21 @@ export class TravelPlanDataSource extends PrismaDataSource {
         const { services: { webHook }, dataSources: { acl }, session: { user } } = context;
         try {
             const { id, ...toUpdate } = data;
-            const aclWhere = acl.createUpdateFilters(id, 'aclRules', user, 'writePermission');
+            const aclWhere = acl.createUpdateFiltersX(id, user, 'writePermission', {
+                publicRuleRelation: {
+                    publicACLRuleField: "aclPublicRules",
+                    wildcardField: "wildcard",
+                    wildcardFieldValue: "*",
+                },
+                userRuleRelation: {
+                    userACLRuleField: "aclUserRules",
+                    userIdField: "userId",
+                },
+                roleRuleRelation: {
+                    roleACLRuleField: "aclRolesRules",
+                    roleIdField: "roleId",
+                }
+            });
             const updatedRecord = await this.prisma.travelPlan.update({
                 where: aclWhere,
                 data: toUpdate,
@@ -121,7 +172,21 @@ export class TravelPlanDataSource extends PrismaDataSource {
     @injectUser()
     async findMany(context: ServerContext, filters: any) {
         const { dataSources: { acl }, session: { user } } = context;
-        const aclWhere = acl.createFindFilters(filters, 'aclRules', user, 'readPermission');
+        const aclWhere = acl.createFindFiltersX(filters, user, 'readPermission', {
+            publicRuleRelation: {
+                publicACLRuleField: "aclPublicRules",
+                wildcardField: "wildcard",
+                wildcardFieldValue: "*",
+            },
+            userRuleRelation: {
+                userACLRuleField: "aclUserRules",
+                userIdField: "userId",
+            },
+            roleRuleRelation: {
+                roleACLRuleField: "aclRolesRules",
+                roleIdField: "roleId",
+            }
+        });
         const aclFiltered = await this.prisma.travelPlan.findMany({ where: aclWhere });
         return aclFiltered;
     }

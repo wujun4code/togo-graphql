@@ -1,0 +1,15 @@
+import { User } from "./user-role"
+
+model Follow {
+  id          Int  @id @default(autoincrement())
+
+  followerId  Int
+  followeeId  Int
+
+  follower    User @relation(name: "AsFollowers", fields: [followerId], references: [id])
+  followee    User @relation(name: "AsFollowees", fields: [followeeId], references: [id])
+
+  followedAt  DateTime @default(now()) @db.Timestamptz(3)
+
+  @@unique([followerId, followeeId])
+}

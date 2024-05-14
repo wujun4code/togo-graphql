@@ -1,0 +1,23 @@
+model WebHook {
+  id      Int             @id @default(autoincrement())
+  name    String          @unique
+  url     String
+  headers WebHookHeader[]
+  events  WebHookEvent[]
+}
+
+model WebHookHeader {
+  id        Int     @id @default(autoincrement())
+  webHook   WebHook @relation(fields: [webHookId], references: [id])
+  webHookId Int
+  key       String
+  value     String
+}
+
+model WebHookEvent {
+  id        Int     @id @default(autoincrement())
+  webHook   WebHook @relation(fields: [webHookId], references: [id])
+  webHookId Int
+  resource  String
+  operation String
+}

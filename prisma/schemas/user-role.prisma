@@ -1,0 +1,137 @@
+enum UserType {
+  HUMAN
+  ORG
+  BOT
+}
+
+model User {
+  id                Int                 @id @default(autoincrement())
+  email             String              @unique
+  username          String              @unique
+  friendlyName      String?
+  
+  snsName           String              @unique @default(cuid())
+  openId            String              @unique @default(uuid())
+
+  avatar            String?
+  bio               String?
+
+  posts             Post[]
+  travelPlans       TravelPlan[]
+  roles             RoleUser[]
+
+  asFollowers         Follow[] @relation(name: "AsFollowers")
+  asFollowees         Follow[] @relation(name: "AsFollowees")
+
+  oauth2Bindings    User_OAuth2[] @relation(name: "OAuth2_Binding")
+
+  createdAt         DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime  @default(now()) @updatedAt @db.Timestamptz(3)
+
+  createdComments   PostComment[]  @relation(name:"comments")
+
+  userType          UserType       @default(HUMAN)
+
+
+  relatedOrganization                 Organization?                                          @relation(name:"OrganizationRelatedUser")
+
+  createdOrganizations                Organization[]                                         @relation(name:"OrganizationCreator")
+
+  rolesInOrganization                 OrganizationUserRole[]                                 @relation(name:"UserOrganizationUserRole")
+
+  managedRobots                       Robot[]                                                @relation(name:"RobotsBelongsToUser")
+
+  relatedRobot                        Robot?                                                 @relation(name:"RobotRelatedUser")
+
+  asMentioned                             MentionedHistory[]                                     @relation(name:"MentionedRelatedUser")
+
+  asMentioner                             MentionedHistory[]                                     @relation(name:"MentionerRelatedUser")
+
+  unreadMentionedNotification             UnreadMentionedNotification[]                          @relation(name:"UnreadMentionedNotificationRelatedUser")
+  archivedMentionedNotification           MentionedNotificationMarkedReadArchived[]              @relation(name:"ArchivedRelatedUser")
+
+  authorizedClients                       UserAPIClient[]                                        @relation(name:"apiClientBindingUser")
+
+  unreadPostCommentNotification           UnreadPostCommentNotification[]                        @relation(name:"UnreadCommentNotificationOriginalPosterRelatedUser")
+  archivedPostCommentNotification         CommentNotificationMarkedReadArchived[]                @relation(name:"ArchivedCommentNotificationRelatedUser")
+
+  @@index(fields:[createdAt])
+  @@index(fields:[updatedAt])    
+}
+
+model OAuth2 {
+  id                Int                 @id @default(autoincrement())
+  
+  provider          String              
+  clientId          String              
+
+  authUsers            User_OAuth2[]       @relation(name: "OAuth2_Providers")
+
+  @@unique([provider, clientId], name: "unique_provider_clientId")
+}
+
+model User_OAuth2 {
+  id                Int                 @id @default(autoincrement())
+
+  oauth2Id          Int
+  oauth2            OAuth2              @relation(name: "OAuth2_Providers", fields: [oauth2Id], references: [id])
+
+  userId            Int
+  user              User                @relation(name: "OAuth2_Binding", fields: [userId], references: [id])
+
+  openId            String
+
+  avatar            String?
+  site              String?
+  bio               String?
+
+  createdAt         DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime   @default(now()) @updatedAt @db.Timestamptz(3)
+
+  @@unique([oauth2Id, userId, openId], name: "unique_provider_userId_clientId")
+
+  @@index(fields:[createdAt])
+  @@index(fields:[updatedAt])    
+}
+
+model Role {
+  id                Int                 @id @default(autoincrement())
+  name              String              @unique
+  description       String
+  users             RoleUser[]
+
+  usersInOrganizations    OrganizationUserRole[]  @relation(name:"RoleOrganizationUserRole")
+}
+
+model RoleUser {
+  id     Int  @id @default(autoincrement())
+  roleId Int
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+  role   Role @relation(fields: [roleId], references: [id])
+  
+  createdAt         DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime   @default(now()) @updatedAt @db.Timestamptz(3)
+
+  @@index([roleId, userId], name: "unique_user_role")
+
+  @@index(fields:[createdAt])
+  @@index(fields:[updatedAt])    
+}
+
+model UserAPIClient {
+  id                        Int                     @id @default(autoincrement())
+  name                      String                  
+  description               String?                 
+  apiId                     String                  @default(uuid())
+  apiKey                    String                  @default(cuid())
+
+  bindingUserId             Int
+  bindingUser               User                    @relation("apiClientBindingUser",fields: [bindingUserId], references: [id])
+
+  createdAt         DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime  @default(now()) @updatedAt @db.Timestamptz(3)
+
+  @@index(fields:[createdAt])
+  @@index(fields:[updatedAt])    
+}

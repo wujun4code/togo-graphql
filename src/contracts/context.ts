@@ -2,19 +2,40 @@ import {
     LocationDataSource, WeatherDataSource,
     AirDataSource, OpenWeatherMap,
     PrismaDataSource, TravelPlanDataSource,
-    WebHookDataSource, LocationPointDataSource, ACLDataSource
+    WebHookDataSource, LocationPointDataSource, ACLDataSource,
+    PostDataSource, UserDataSource, FollowDataSource, MentionHistoryDataSource,
+    RobotDataSource, NotificationDataSource,
 } from '../datasources/index.js';
 
-import { WebHookService } from '../services/index.js';
+import { WebHookService, UserTokenService, PubSubService, PubSubManager, ProxyHookHttp } from '../services/index.js';
 import { ACL } from '../decorators/index.js';
+import { PubSub } from 'graphql-subscriptions';
 
-export interface OAuth2UserInterface {
-    id: string;
+export type OAuthUserInfo = {
+    basic: IOAuth2BasicInfo;
+    extra: IOAuth2ExtraProfile;
+}
+
+export interface IOAuth2BasicInfo {
+    provider: string;
+    clientId: string;
     sub: string;
-    name: string;
+    username: string;
+    email: string;
+    friendlyName: string;
+}
+
+export interface IOAuth2ExtraProfile {
+    avatar?: string;
+    site?: string;
+    bio?: string;
+}
+
+export interface OAuth2UserInterface extends IOAuth2BasicInfo {
+
+    id: string;
     roles: string[];
     permissions: string[];
-    email: string;
     hasRole: (roleName: string) => boolean;
     hasPermission: (permission: string) => boolean;
 }
@@ -49,10 +70,13 @@ export class KeycloakAccessTokenUser implements OAuth2UserInterface {
 
     content: KeycloakAccessTokenContent;
 
+    provider: string;
+    clientId: string;
     id: string;
     sub: string;
     email: string;
-    name: string;
+    username: string;
+    friendlyName: string;
     roles: string[];
     permissions: string[];
 
@@ -61,7 +85,10 @@ export class KeycloakAccessTokenUser implements OAuth2UserInterface {
         this.content = accessTokenContent;
         this.sub = this.content.sub;
         this.email = this.content.email;
-        this.name = this.content.name;
+        this.username = this.content.preferred_username;
+        this.friendlyName = this.content.name;
+        this.provider = 'keycloak';
+        this.clientId = resource;
         this.roles = this.content.resource_access[resource]['roles'];
         this.permissions = this.content.resource_access[resource]['roles'];
     }
@@ -77,13 +104,18 @@ export class KeycloakAccessTokenUser implements OAuth2UserInterface {
 }
 
 export interface SessionContext {
-    user: ExtendedUserInterface,
-    http: HttpContext;
+    user?: ExtendedUserInterface,
+    http?: HttpContext;
 }
 
 export interface ServiceContext {
     acl: ACL;
     webHook: WebHookService;
+    jwt: UserTokenService;
+    pubSub: PubSubService;
+    gqlPubSub: PubSub;
+    pubSubManager: PubSubManager;
+    proxyHookHttp: ProxyHookHttp;
 }
 
 export interface HttpContext {
@@ -100,7 +132,13 @@ export interface IDataSources {
     travelPlan: TravelPlanDataSource;
     webHook: WebHookDataSource;
     locationPoint: LocationPointDataSource;
-    acl: ACLDataSource
+    acl: ACLDataSource;
+    post: PostDataSource;
+    user: UserDataSource;
+    follow: FollowDataSource;
+    robot: RobotDataSource;
+    mentionHistory: MentionHistoryDataSource,
+    notification: NotificationDataSource,
 }
 
 export interface ServerContext {
@@ -108,4 +146,3 @@ export interface ServerContext {
     services: ServiceContext;
     dataSources: IDataSources;
 }
-

@@ -1,7 +1,7 @@
 import { RESTDataSource } from '@apollo/datasource-rest';
 import { GraphQLError } from 'graphql';
 import { IContextDataSource, IRESTDataSourceConfig } from '../context-base.js';
-import { SessionContext } from '../../contracts/index.js';
+import { SessionContext, GraphqlErrorCode } from '../../contracts/index.js';
 
 export class QWeatherDataSource extends RESTDataSource implements IContextDataSource {
     session: SessionContext;
@@ -17,7 +17,8 @@ export class QWeatherDataSource extends RESTDataSource implements IContextDataSo
         if (response.code == '403')
             throw new GraphQLError('please upgrade your qweather subscription.', {
                 extensions: {
-                    code: 'Forbidden',
+                    code: GraphqlErrorCode.FORBIDDEN,
+                    name: GraphqlErrorCode[GraphqlErrorCode.FORBIDDEN],
                 },
             });
     };

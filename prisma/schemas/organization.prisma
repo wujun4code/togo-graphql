@@ -1,0 +1,40 @@
+import { User } from "./user-role"
+
+model Organization {
+  id                Int                 @id @default(autoincrement())
+  
+  relatedUserId     Int                 @unique
+  relatedUser       User                @relation("OrganizationRelatedUser",fields: [relatedUserId], references: [id])
+
+  createdById       Int
+  createdBy         User                @relation("OrganizationCreator", fields: [createdById], references: [id])
+
+  createdAt         DateTime            @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime            @default(now()) @updatedAt @db.Timestamptz(3)
+
+  usersWithRoles    OrganizationUserRole[]  @relation(name:"OrganizationOrganizationUserRole")
+
+  managedRobots     Robot[]             @relation(name:"RobotsManagedByOrganization")
+
+  @@index(fields:[createdAt])
+  @@index(fields:[updatedAt])  
+}
+
+model OrganizationUserRole {
+  id                Int                 @id @default(autoincrement())
+  
+  organizationId    Int
+  organization      Organization        @relation("OrganizationOrganizationUserRole",fields: [organizationId], references: [id])
+  
+  userId            Int
+  user              User                @relation("UserOrganizationUserRole",fields: [userId], references: [id])
+
+  roleId            Int
+  role              Role                @relation("RoleOrganizationUserRole",fields: [roleId], references: [id])
+
+  createdAt         DateTime            @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime            @default(now()) @updatedAt @db.Timestamptz(3)
+  
+  @@index(fields:[createdAt])
+  @@index(fields:[updatedAt])    
+}
