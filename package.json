@@ -8,7 +8,7 @@
     "migrate:deploy": "npx prisma migrate deploy",
     "migrate:dev": "npx prisma-import --force && npx prisma format && npx prisma migrate dev",
     "generate": "npx prisma generate",
-    "build": "npm run generate",
+    "build": "npm run generate && npm run migrate:deploy",
     "compile": "tsc",
     "dev": "nodemon",
     "start-dev": "npm run compile && node --inspect ./dist/index.js ",
