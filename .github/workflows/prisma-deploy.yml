@@ -1,4 +1,4 @@
-name: Deploy
+name: Prisma Db migrate
 on:
   push:
     branches:
