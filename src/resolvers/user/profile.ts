@@ -45,6 +45,7 @@ export const resolvers = {
             return result;
         }),
         apiClientConnection: withAuthentication(async (parent, args, context, info) => {
+            console.log(`PrivateProfileInfo.apiClientConnection.parent`, parent);
             const { authorizedClients, _count } = await context.dataSources.user.getAPIClients(context, {
                 ...args.input,
                 userId: parseInt(parent.id)

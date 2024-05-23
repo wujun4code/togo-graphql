@@ -1,4 +1,4 @@
-import { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient, Prisma, UserType } from '@prisma/client';
 import { ServerContext, SessionContext } from '../../contracts/index.js';
 import { injectUser } from '../../decorators/index.js';
 import { PrismaDataSource } from './base.js';
@@ -8,6 +8,41 @@ import { GraphqlErrorCode } from '../../contracts/index.js';
 export class RobotDataSource extends PrismaDataSource {
     constructor(config: { client: PrismaClient, session: SessionContext }) {
         super(config);
+    }
+
+    async findTopRobots(context: ServerContext, input: any) {
+
+        const {
+            limit,
+            skip,
+            sorter,
+            filters,
+            cursor,
+            sortedKey,
+            sortValue,
+            cursorFilter,
+            supportedSortFields,
+        } = this.prepareFilters(input);
+
+        const robots = await this.prisma.robot.findMany({
+            where: {
+            },
+            ...(cursor && sortedKey && supportedSortFields.includes(sortedKey) && {
+                cursor: {
+                    id: cursor
+                }
+            }),
+            orderBy: sorter ? sorter : {
+                createdAt: 'desc',
+            },
+            take: limit,
+            select: {
+                id: true,
+                relatedUserId: true,
+            },
+        });
+
+        return robots;
     }
 
     async countManagingBy(context: ServerContext, input: any) {
@@ -96,7 +131,7 @@ export class RobotDataSource extends PrismaDataSource {
 
         return data;
     }
-    
+
     async findById(context: ServerContext, input: any) {
         const { id } = input;
         const data = await this.prisma.robot.findUnique(
@@ -167,7 +202,7 @@ export class RobotDataSource extends PrismaDataSource {
 
     async create(context: ServerContext, input: any) {
         const currentUserId = parseInt(context.session.user.id);
-        const { relatedUser, hookUrl, website } = input;
+        const { relatedUser, hookUrl, website, headers } = input;
 
         try {
             const data = await this.prisma.robot.create({
@@ -181,8 +216,12 @@ export class RobotDataSource extends PrismaDataSource {
                             username: relatedUser.username ? relatedUser.username : relatedUser.snsName,
                             bio: relatedUser.bio,
                             friendlyName: relatedUser.friendlyName,
-                            avatar: relatedUser.avatar
+                            avatar: relatedUser.avatar,
+                            userType: UserType.BOT,
                         }
+                    },
+                    headers: {
+                        create: headers
                     },
                     managingUser: {
                         connect: { id: currentUserId }

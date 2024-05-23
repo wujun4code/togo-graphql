@@ -7,6 +7,8 @@ export const typeDefs = `#graphql
     website: String
 
     headers: [CreateWebHookHeaderInput]
+
+    apiClient: CreateAPIClientInput
   }
 
   input UpdateRobotInput {

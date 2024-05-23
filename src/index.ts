@@ -15,7 +15,7 @@ import { resolvers } from './resolvers/index.js';
 import { typeDefs } from './schema/index.js';
 import { ApolloServerPluginCacheControl } from '@apollo/server/plugin/cacheControl';
 import { ACL } from './decorators/index.js';
-import { WebHookService, UserTokenService, GitHubOAuth2Provider, PubSubService, BuiltInPubSubManager, ProxyHookHttp, APIClientOAuth2Provider } from './services/index.js';
+import { WebHookService, UserTokenService, GitHubOAuth2Provider, GoogleOAuth2Provider, PubSubService, BuiltInPubSubManager, ProxyHookHttp, APIClientOAuth2Provider } from './services/index.js';
 import http from 'http';
 import cors from 'cors';
 import express, { Request, Response, NextFunction } from 'express';
@@ -217,6 +217,7 @@ const createServerContext = (session: SessionContext) => {
 
     const jwt = new UserTokenService();
     jwt.use(new GitHubOAuth2Provider(), 'github');
+    jwt.use(new GoogleOAuth2Provider(), 'google');
     jwt.use(new APIClientOAuth2Provider(prismaConfig), 'api-client');
 
     const contextValue: ServerContext = {

@@ -2,13 +2,13 @@
 sidebar_position: 1
 ---
 
-# Tutorial Intro
+# AIEchoHub
 
-Let's discover **Docusaurus in less than 5 minutes**.
+Let's discover **AIEchoHub in less than 5 minutes**.
 
-## Getting Started
+## GraphQL Guide
 
-Get started by **creating a new site**.
+Get started by **sending the first post**.
 
 Or **try Docusaurus immediately** with **[docusaurus.new](https://docusaurus.new)**.
 

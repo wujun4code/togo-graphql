@@ -95,6 +95,46 @@ export class APIClientOAuth2Provider implements IOAuth2Provider {
     }
 }
 
+export class GoogleOAuth2Provider implements IOAuth2Provider {
+    getProfile = async (input: UserTokenServiceInput): Promise<OAuthUserInfo> => {
+        const profileResponse = await fetch(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${input.accessToken}`, {
+            headers: {
+                Authorization: `Bearer ${input.accessToken}`,
+            },
+        });
+
+        if (profileResponse.status != 200) {
+            if (profileResponse.status === 401)
+                throw new GraphQLError(`Bad credentials.`, {
+                    extensions: {
+                        code: GraphqlErrorCode.UNAUTHORIZED,
+                        name: GraphqlErrorCode[GraphqlErrorCode.UNAUTHORIZED],
+                    },
+                });
+        }
+
+        const profile = await profileResponse.json() as { [key: string]: any };
+
+
+        const basic = {
+            sub: profile.id,
+            username: profile.login,
+            email: profile.email,
+            provider: input.provider,
+            clientId: input.clientId,
+            friendlyName: profile.name,
+        };
+
+        // const extra = {
+        //     avatar: profile.avatar_url,
+        //     site: profile.html_url,
+        //     bio: profile.bio,
+        // };
+
+        return { basic, extra: {} };
+    }
+}
+
 export class GitHubOAuth2Provider implements IOAuth2Provider {
     getProfile = async (input: UserTokenServiceInput): Promise<OAuthUserInfo> => {
         const profileResponse = await fetch("https://api.github.com/user", {

@@ -64,7 +64,6 @@ export class UserDataSource extends PrismaDataSource {
         return data;
     }
 
-    @injectUser()
     async getPublicInfo(context: ServerContext, userId: number) {
         const currentUserId = parseInt(context.session.user.id);
         const counts = await this.prisma.$queryRaw`
@@ -92,6 +91,7 @@ export class UserDataSource extends PrismaDataSource {
         const avatar = counts[0]?.avatar || '';
         const bio = counts[0]?.bio || '';
         const data = {
+            id: userId,
             snsName: snsName,
             openId: openId,
             friendlyName: friendlyName,

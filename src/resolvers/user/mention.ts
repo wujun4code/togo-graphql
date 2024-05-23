@@ -27,6 +27,23 @@ export const resolvers = {
 
             return { ...connection, input: args.input };
         }),
+        topRobots: withAuthentication(async (parent, args, context, info) => {
+
+            const list = await context.dataSources.robot.findTopRobots(context, args.input);
+
+            const connection = {
+                edges: list.map(n => {
+                    return { cursor: n.id, node: n };
+                }),
+                pageInfo: {
+                    hasNextPage: false,
+                    endCursor: list.length > 0 ? list[list.length - 1].id : ''
+                },
+                //totalCount: 0,
+            };
+
+            return { ...connection, input: args.input };
+        }),
     },
     MentionerMentionHistoryConnection: {
         totalCount: async (parent, args, context, info) => {
@@ -53,4 +70,11 @@ export const resolvers = {
             else return await context.dataSources.user.getSharedPublicProfileByUserId(context, parent.mentionedUserId);
         },
     },
+    RobotPublicProfileInfo: {
+        relatedUser: async (parent, args, context, info) => {
+            if (context.session.user)
+                return await context.dataSources.user.getPublicInfo(context, parent.relatedUserId);
+            else return await context.dataSources.user.getSharedPublicProfileByUserId(context, parent.relatedUserId);
+        },
+    }
 };

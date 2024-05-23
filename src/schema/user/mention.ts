@@ -8,9 +8,19 @@ export const typeDefs = `#graphql
     mentionedFriendlyName: String
   }
 
+  type RobotPublicProfileInfo {
+    id: ID!
+    relatedUser: SharedPublicProfileInfo!
+  }
+
   type MentionHistoryEdge {
     cursor: String!
     node: MentionHistory!
+  }
+
+  type MentionRobotEdge {
+    cursor: String!
+    node: RobotPublicProfileInfo!
   }
 
   type MentionerMentionHistoryConnection {
@@ -19,8 +29,15 @@ export const typeDefs = `#graphql
     pageInfo: PageInfo!
   }
 
+  type MentionRobotConnection {
+    totalCount: Int!
+    edges: [MentionRobotEdge]!
+    pageInfo: PageInfo!
+  }
+
   type SuggestingToMention {
     asMentioner(input: BaseQueryInput): MentionerMentionHistoryConnection!
+    topRobots(input: BaseQueryInput): MentionRobotConnection!
   }
 
   input SuggestedTypingInput {

@@ -20,6 +20,14 @@ export const resolvers = {
             return { input: args.input };
         }),
     },
+    PrivateRobotInfo: {
+        relatedUser: async (parent, args, context, info) => {
+            console.log(`PrivateRobotInfo.relatedUser.parent`, parent);
+            if (context.session.user)
+                return await context.dataSources.user.getPublicInfo(context, parent.relatedUserId);
+            else return await context.dataSources.user.getSharedPublicProfileByUserId(context, parent.relatedUserId);
+        },
+    },
     Robot: {
         relatedUser: async (parent, args, context, info) => {
             if (context.session.user)
@@ -73,6 +81,13 @@ export const resolvers = {
                     },
                 });
             const data = await context.dataSources.robot.create(context, args.input);
+            const { relatedUserId } = data;
+            const { apiClient } = args.input;
+
+            let createdAPIClient = undefined;
+            if (apiClient) {
+                createdAPIClient = await context.dataSources.user.createAPIClient(context, { userId: relatedUserId, ...args.input.apiClient });
+            }
             return data;
         }),
         updateRobot: withAuthentication(async (parent, args, context, info) => {

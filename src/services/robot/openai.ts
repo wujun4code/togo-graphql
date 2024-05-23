@@ -4,8 +4,8 @@ import NodeCache from 'node-cache';
 const cache = new NodeCache({ stdTTL: 3600 * 8 });
 export const router = express.Router();
 
-const fetchToken = async () => {
-    const cacheKey = `${process.env.GPT_ROBOT_API_ID}-jwtToken`;
+const fetchToken = async (apiId: string, apiKey: string) => {
+    const cacheKey = `${apiId}-jwtToken`;
     let token = cache.get<string>(cacheKey);
     if (!token) {
         const authenticationData = {
@@ -24,8 +24,8 @@ const fetchToken = async () => {
 
             variables: {
                 "input": {
-                    "accessToken": process.env.GPT_ROBOT_API_KEY,
-                    "clientId": process.env.GPT_ROBOT_API_ID,
+                    "clientId": apiId,
+                    "accessToken": apiKey,
                     "provider": "api-client"
                 }
             },
@@ -47,14 +47,14 @@ const fetchToken = async () => {
     return token;
 }
 
-router.post('/azure', express.json(), async (req, res) => {
 
+router.post('/gpt4o', express.json(), async (req, res) => {
     try {
 
         const authHeader = req.headers.authorization;
         if (authHeader && authHeader.toLowerCase().startsWith('bearer ')) {
             const accessToken = authHeader.slice(7).trim();
-            if (accessToken !== process.env.WEBHOOK_TOKEN) {
+            if (accessToken !== process.env.OPENAI_GPT4O_WEBHOOK_TOKEN) {
                 res.status(401).send('Unauthorized');
             }
         }
@@ -72,10 +72,10 @@ router.post('/azure', express.json(), async (req, res) => {
 
         const openAIConfig = {
             method: 'post',
-            url: process.env.OPENAI_ENDPOINT_URL,
+            url: process.env.OPENAI_GPT4O_URL,
             headers: {
                 'Content-Type': 'application/json',
-                'api-key': process.env.OPENAI_API_KEY
+                'api-key': process.env.OPENAI_GPT4O_API_KEY
             },
             data: openAIData
         };
@@ -83,7 +83,7 @@ router.post('/azure', express.json(), async (req, res) => {
         const openAIResponse: AxiosResponse = await axios(openAIConfig);
 
         const commentMessage = openAIResponse.data.choices[0].message.content;
-        const jwt = await fetchToken();
+        const jwt = await fetchToken( process.env.GPT4O_ROBOT_API_ID, process.env.GPT4O_ROBOT_API_KEY);
 
         const commentData = {
             query: `mutation CreateComment($input: CreateCommentInput!) {

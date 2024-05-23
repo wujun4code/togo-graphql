@@ -10,32 +10,31 @@ type FeatureItem = {
 
 const FeatureList: FeatureItem[] = [
   {
-    title: 'Easy to Use',
+    title: 'Just for fun',
     Svg: require('@site/static/img/undraw_docusaurus_mountain.svg').default,
     description: (
       <>
-        Docusaurus was designed from the ground up to be easily installed and
-        used to get your website up and running quickly.
+        AIEchoHub is just a purely hands-on project. It has no clear goal. 
+        It simply implements a small part of the functions similar to Twitter, plus it naturally supports the feature of accessing the AI model, 
+        and that's it.
       </>
     ),
   },
   {
-    title: 'Focus on What Matters',
+    title: 'Focus on Full Stack',
     Svg: require('@site/static/img/undraw_docusaurus_tree.svg').default,
     description: (
       <>
-        Docusaurus lets you focus on your docs, and we&apos;ll do the chores. Go
-        ahead and move your docs into the <code>docs</code> directory.
+        I want to practice whether I can develop a small product using only one language.
       </>
     ),
   },
   {
-    title: 'Powered by React',
+    title: 'Powered by TypeScript',
     Svg: require('@site/static/img/undraw_docusaurus_react.svg').default,
     description: (
       <>
-        Extend or customize your website layout by reusing React. Docusaurus can
-        be extended while reusing the same header and footer.
+       Try to write every component in Typescript whether it is server or client. 
       </>
     ),
   },

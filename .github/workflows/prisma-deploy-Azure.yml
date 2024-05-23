@@ -1,4 +1,4 @@
-name: Prisma Db migrate
+name: Prisma Db migrate - Azure
 on:
   push:
     branches:
